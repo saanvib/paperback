@@ -37,15 +37,6 @@ class BrowseBooksTileState extends State<BrowseBooksTile>
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-        padding: EdgeInsets.all(8),
-        scrollDirection: Axis.vertical,
-        child: Column(children: <Widget>[
-          buildPanel(),
-        ]));
-  }
-
-  Widget buildPanel() {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(3),

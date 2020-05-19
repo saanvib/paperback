@@ -36,12 +36,7 @@ class BorrowedBooksTileState extends State<BorrowedBooksTile>
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-        padding: EdgeInsets.all(8),
-        scrollDirection: Axis.vertical,
-        child: Column(children: <Widget>[
-          buildPanel(),
-        ]));
+    return buildPanel();
   }
 
   Widget buildPanel() {

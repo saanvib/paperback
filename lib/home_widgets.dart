@@ -34,6 +34,7 @@ class ShelfState extends State<Shelf> {
     return SingleChildScrollView(
       child: Column(
         children: <Widget>[
+          //TODO: add a button to add new books
           SizedBox(
             height: 30,
           ),
@@ -56,7 +57,8 @@ class ShelfState extends State<Shelf> {
                   default:
                     return new ListView.builder(
                       padding: const EdgeInsets.all(10),
-                      // scrollDirection: Axis.vertical,
+                      scrollDirection: Axis.vertical,
+                      physics: NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       itemCount: snapshot.data.documents.length,
                       itemBuilder: (context, index) => _buildListItem(
@@ -86,7 +88,8 @@ class ShelfState extends State<Shelf> {
                   default:
                     return new ListView.builder(
                       padding: const EdgeInsets.all(10),
-                      // scrollDirection: Axis.vertical,
+                      scrollDirection: Axis.vertical,
+                      physics: NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       itemCount: snapshot.data.documents.length,
                       itemBuilder: (context, index) => _buildBorrowedListItem(
@@ -110,7 +113,6 @@ class ShelfState extends State<Shelf> {
   }
 }
 
-// TODO: fix scroll
 class Browse extends StatefulWidget {
   final String userEmail;
   Browse(this.userEmail);
@@ -134,7 +136,8 @@ class BrowseState extends State<Browse> {
             style: optionStyle,
           ),
           StreamBuilder(
-              // TODO: filter books only for MY group(s)
+              // TODO: filter books only for MY group(s) - saanvi using chosengroup from widget.
+              //TODO: go to database and add a field group_id to the books.
               stream: Firestore.instance
                   .collection('books')
                   .where("status", isEqualTo: "not_checked_out")
@@ -149,7 +152,8 @@ class BrowseState extends State<Browse> {
                   default:
                     return new ListView.builder(
                       padding: const EdgeInsets.all(10),
-                      // scrollDirection: Axis.vertical,
+                      scrollDirection: Axis.vertical,
+                      physics: NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       itemCount: snapshot.data.documents.length,
                       itemBuilder: (context, index) => _buildListItem(

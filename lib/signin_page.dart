@@ -71,28 +71,6 @@ class SignInPageState extends State<SignInPage> {
   }
 }
 
-Future<String> signInWithGoogle() async {
-  final GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
-  final GoogleSignInAuthentication googleSignInAuthentication =
-      await googleSignInAccount.authentication;
-
-  final AuthCredential credential = GoogleAuthProvider.getCredential(
-    accessToken: googleSignInAuthentication.accessToken,
-    idToken: googleSignInAuthentication.idToken,
-  );
-
-  final AuthResult authResult = await _auth.signInWithCredential(credential);
-  final FirebaseUser user = authResult.user;
-
-  assert(!user.isAnonymous);
-  assert(await user.getIdToken() != null);
-
-  final FirebaseUser currentUser = await _auth.currentUser();
-  assert(user.uid == currentUser.uid);
-
-  return 'signInWithGoogle succeeded: $user';
-}
-
 void signOutGoogle() async {
   await googleSignIn.signOut();
 
@@ -105,6 +83,7 @@ class _GoogleSignInSection extends StatefulWidget {
 }
 
 class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
+  bool isGoogleNewUser;
   bool _success;
   String _userID;
 
@@ -132,41 +111,72 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
       ],
     );
   }
-}
 
-Widget _signInButton(BuildContext context) {
-  return OutlineButton(
-    splashColor: Colors.grey,
-    onPressed: () {
-      //TODO: Deal with registration for google sign in
-      signInWithGoogle().whenComplete(() {
-        _pushPage(context, HomePage(0));
-      });
-    },
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
-    highlightElevation: 0,
-    borderSide: BorderSide(color: Colors.grey),
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Image(image: AssetImage("images/google-logo.jpg"), height: 35.0),
-          Padding(
-            padding: const EdgeInsets.only(left: 10),
-            child: Text(
-              'Sign in with Google',
-              style: TextStyle(
-                fontSize: 20,
-                color: Colors.grey,
+  Widget _signInButton(BuildContext context) {
+    return OutlineButton(
+      splashColor: Colors.grey,
+      onPressed: () {
+        signInWithGoogle().whenComplete(() {
+          if (isGoogleNewUser) {
+            _pushPage(context, RegisterPage());
+          } else {
+            _pushPage(context, HomePage(0));
+          }
+        });
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+      highlightElevation: 0,
+      borderSide: BorderSide(color: Colors.grey),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Image(image: AssetImage("images/google-logo.jpg"), height: 35.0),
+            Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: Text(
+                'Sign in with Google',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.grey,
+                ),
               ),
-            ),
-          )
-        ],
+            )
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  Future<String> signInWithGoogle() async {
+    final GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
+    final GoogleSignInAuthentication googleSignInAuthentication =
+        await googleSignInAccount.authentication;
+
+    final AuthCredential credential = GoogleAuthProvider.getCredential(
+      accessToken: googleSignInAuthentication.accessToken,
+      idToken: googleSignInAuthentication.idToken,
+    );
+
+    final AuthResult authResult = await _auth.signInWithCredential(credential);
+    final FirebaseUser user = authResult.user;
+
+    assert(!user.isAnonymous);
+    assert(await user.getIdToken() != null);
+
+    final FirebaseUser currentUser = await _auth.currentUser();
+    assert(user.uid == currentUser.uid);
+
+    if (authResult.additionalUserInfo.isNewUser) {
+      isGoogleNewUser = true;
+    } else {
+      isGoogleNewUser = false;
+    }
+
+    return 'signInWithGoogle succeeded: $user';
+  }
 }
 
 void _pushPage(BuildContext context, Widget page) {

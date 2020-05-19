@@ -19,6 +19,8 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   static const TextStyle optionStyle = TextStyle(fontSize: 30);
   static String userEmail;
+//TODO: add chosen group
+  //TODO: add my groups
 
   @override
   void initState() {
@@ -28,12 +30,13 @@ class HomePageState extends State<HomePage> {
       // make sure to use `setState`
       setState(() {
         userEmail = result;
-        print("Inside setState $result $userEmail");
+        // print("Inside setState $result $userEmail");
       });
     });
   }
 
   List<Widget> _widgetOptions = <Widget>[
+    //TODO: pass chosengroup
     Groups(userEmail),
     Browse(userEmail),
     Shelf(userEmail),
@@ -61,6 +64,7 @@ class HomePageState extends State<HomePage> {
                     icon: Icon(Icons.exit_to_app),
                     onPressed: () async {
                       await _auth.signOut();
+                      signOutGoogle();
                       Navigator.of(context).push(MaterialPageRoute<void>(
                           builder: (_) => SignInPage()));
                     },
@@ -92,7 +96,13 @@ class HomePageState extends State<HomePage> {
   getCurrentUser() async {
     final FirebaseUser user = await _auth.currentUser();
     // Similarly we can get email as well
-    print(user.email);
+    // print(user.email);
     return user.email;
+  }
+
+  void signOutGoogle() async {
+    await googleSignIn.signOut();
+
+    print("User Sign Out");
   }
 }

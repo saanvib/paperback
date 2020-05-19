@@ -9,6 +9,8 @@ import 'package:paperback/password_field.dart';
 import 'package:paperback/signin_page.dart';
 import 'package:random_string/random_string.dart';
 
+import 'home_page.dart';
+
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class RegisterPage extends StatefulWidget {
@@ -126,23 +128,45 @@ class RegisterPageState extends State<RegisterPage> {
         _success = true;
         _userEmail = user.email;
         // TODO: handle radio button and scenario with creating new group
+        // TODO: check if the user exists and give error
+        // TODO: take group name (home page?)
         if (_groupCodeController.text != "") {
           Firestore.instance.collection('users').add({
             "full_name": _nameController.text,
             "email": _emailController.text,
-            "group_code": _groupCodeController.text,
+            "group_code": [_groupCodeController.text],
+          });
+          Firestore.instance
+              .collection("groups")
+              .where("group_code", isEqualTo: _groupCodeController.text)
+              .getDocuments()
+              .then((e) {
+            Firestore.instance
+                .collection('groups')
+                .document(e.documents[0].documentID)
+                .updateData({
+              "members": FieldValue.arrayUnion([_emailController.text])
+            });
           });
         } else {
           String newGroupId = "g_" + randomAlphaNumeric(6);
-          // TODO: add group to database
-          //TODO: Convert the groups to array to handle multiple groups.
           Firestore.instance.collection('users').add({
             "full_name": _nameController.text,
             "email": _emailController.text,
+            "group_code": [newGroupId],
+          });
+          Firestore.instance.collection("groups").add({
             "group_code": newGroupId,
+            "members": [_emailController.text]
           });
         }
-        _pushPage(context, SignInPage());
+        _auth.currentUser().then((val) {
+          if (val != null) {
+            _pushPage(context, HomePage(0));
+          } else {
+            _pushPage(context, SignInPage());
+          }
+        });
       });
     } else {
       _success = false;
