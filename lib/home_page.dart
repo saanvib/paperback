@@ -1,13 +1,13 @@
 // ignore: avoid_web_libraries_in_flutter
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:paperback/home_widgets.dart';
 import 'package:paperback/signin_page.dart';
 
-final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
+//TODO: test if the user is logged out then redirect to home page.
 class HomePage extends StatefulWidget {
   final String title = 'Home Page';
   int _activeTab;
@@ -19,8 +19,7 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   static const TextStyle optionStyle = TextStyle(fontSize: 30);
   static String userEmail;
-//TODO: add chosen group
-  //TODO: add my groups
+  static List<String> userGroups;
 
   @override
   void initState() {
@@ -28,18 +27,27 @@ class HomePageState extends State<HomePage> {
     getCurrentUser().then((result) {
       // If we need to rebuild the widget with the resulting data,
       // make sure to use `setState`
-      setState(() {
-        userEmail = result;
-        // print("Inside setState $result $userEmail");
+      //userEmail = result;
+      userEmail = result;
+      Firestore.instance
+          .collection('users')
+          .where("email", isEqualTo: userEmail)
+          .getDocuments()
+          .then((value) {
+        setState(() {
+          userGroups = List.from(value.documents[0].data["group_code"]);
+          print("groups: ");
+          print(userGroups);
+          // print("Inside setState $result $userEmail");
+        });
       });
     });
   }
 
   List<Widget> _widgetOptions = <Widget>[
-    //TODO: pass chosengroup
-    Groups(userEmail),
-    Browse(userEmail),
-    Shelf(userEmail),
+    Groups(userEmail, userGroups),
+    Browse(userEmail, userGroups),
+    Shelf(userEmail, userGroups),
   ];
 
   void _onItemTapped(int index) {
@@ -70,7 +78,11 @@ class HomePageState extends State<HomePage> {
                     },
                   ),
                 ]),
-            body: _widgetOptions.elementAt(widget._activeTab),
+            body: (userEmail != null && userGroups != null)
+                ? _widgetOptions.elementAt(widget._activeTab)
+                : Container(
+                    child: Text("Loading ..."),
+                  ),
             bottomNavigationBar: BottomNavigationBar(
               items: const <BottomNavigationBarItem>[
                 BottomNavigationBarItem(

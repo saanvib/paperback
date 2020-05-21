@@ -58,6 +58,7 @@ class BrowseBooksTileState extends State<BrowseBooksTile>
             sizeFactor: animationView,
             child: Column(
               children: <Widget>[
+                Text("Owner\'s Email: " + widget.doc["owner_email"].toString()),
                 Container(
                     padding: EdgeInsets.all(15),
                     child: ((widget.doc["status"] == "not_checked_out") &&

@@ -4,7 +4,7 @@ import 'package:random_string/random_string.dart';
 var db = Firestore.instance;
 
 class Book {
-  static addBook(String title, String author, String owner) {
+  static addBook(String title, String author, String owner, String groupID) {
     String bookId = "b_" + randomAlphaNumeric(10);
     db.collection('books').add({
       "title": title,
@@ -12,6 +12,8 @@ class Book {
       "owner_email": owner,
       "book_id": bookId,
       "status": "not_checked_out",
+      "checked_out_to_email": "",
+      "group_id": groupID,
     });
   }
 
