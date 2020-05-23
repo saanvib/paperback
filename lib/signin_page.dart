@@ -5,6 +5,8 @@ import 'package:paperback/home_page.dart';
 import 'package:paperback/password_field.dart';
 import 'package:paperback/register_page.dart';
 
+import 'google_register_page.dart';
+
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final GoogleSignIn googleSignIn = GoogleSignIn();
 
@@ -119,7 +121,7 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
         signInWithGoogle().whenComplete(() {
           if (isGoogleNewUser) {
             //TODO: check if the user exists in database on home page.
-            _pushReplacementPage(context, RegisterPage());
+            _pushReplacementPage(context, GoogleRegisterPage());
           } else {
             _pushReplacementPage(context, HomePage(0));
           }
@@ -236,6 +238,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             alignment: Alignment.center,
             child: RaisedButton(
+              color: Colors.purple,
               onPressed: () async {
                 if (_formKey.currentState.validate()) {
                   _signInWithEmailAndPassword().whenComplete(() {
@@ -275,22 +278,33 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
 
   // Example code of how to sign in with email and password.
   Future<String> _signInWithEmailAndPassword() async {
-    final FirebaseUser user = (await _auth.signInWithEmailAndPassword(
-      email: _emailController.text,
-      password: _passwordController.text,
-    ))
-        .user;
+    FirebaseUser user;
+    try {
+      user = (await _auth.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      ))
+          .user;
+    } catch (error) {
+      setState(() {
+        _success = false;
+        return "Sign in Failed";
+      });
+    }
+
     if (user != null) {
       setState(() {
         _success = true;
         _userEmail = user.email;
-        return "Signin Succeeded for user: $user.email";
+        return "Sign in Succeeded for user: $user.email";
       });
     } else {
-      _success = false;
-      return "Signin Failed";
+      setState(() {
+        _success = false;
+        return "Sign in Failed";
+      });
     }
 
-    return "Signin Failed";
+    return "Sign in Failed";
   }
 }

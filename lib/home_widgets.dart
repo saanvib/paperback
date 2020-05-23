@@ -11,18 +11,20 @@ class Groups extends StatefulWidget {
   final List<String> userGroups;
   Groups(this.userEmail, this.userGroups);
   @override
-  State<StatefulWidget> createState() => GroupsState();
+  State<StatefulWidget> createState() => GroupsState(userEmail, userGroups);
 }
 
 class GroupsState extends State<Groups> {
   static const TextStyle optionStyle = TextStyle(fontSize: 30);
   String _selectedGroup;
   List<String> members;
+  String userEmail;
+  List<String> userGroups;
+  @override
+  GroupsState(this.userEmail, this.userGroups);
 
   @override
   Widget build(BuildContext context) {
-    //TODO: Show the list of groups as dropdown button.
-    //TODO: When the user chooses the group, then show the members as email addresses.
     return Column(
       children: <Widget>[
         Text(
@@ -32,7 +34,7 @@ class GroupsState extends State<Groups> {
         DropdownButton<String>(
           hint: new Text('Select Group'),
           items: loadGroupList(),
-          value: widget.userGroups[0].toString(),
+          value: userGroups[0].toString(),
           onChanged: (value) {
             Firestore.instance
                 .collection("groups")
@@ -68,10 +70,10 @@ class GroupsState extends State<Groups> {
 
   List<Widget> loadGroupList() {
     List<DropdownMenuItem<String>> groupList = [];
-    for (var i = 0; i < widget.userGroups.length; i++) {
+    for (var i = 0; i < userGroups.length; i++) {
       groupList.add(new DropdownMenuItem(
-        child: new Text(widget.userGroups[i]),
-        value: widget.userGroups[i].toString(),
+        child: new Text(userGroups[i]),
+        value: userGroups[i].toString(),
       ));
     }
 

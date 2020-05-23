@@ -2,8 +2,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:paperback/home_widgets.dart';
 import 'package:paperback/signin_page.dart';
+
+import 'home_widgets.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -40,16 +41,17 @@ class HomePageState extends State<HomePage> {
           print("groups: ");
           print(userGroups);
           // print("Inside setState $result $userEmail");
+          _widgetOptions = <Widget>[
+            Groups(userEmail, userGroups),
+            Browse(userEmail, userGroups),
+            Shelf(userEmail, userGroups),
+          ];
         });
       });
     });
   }
 
-  List<Widget> _widgetOptions = <Widget>[
-    Groups(userEmail, userGroups),
-    Browse(userEmail, userGroups),
-    Shelf(userEmail, userGroups),
-  ];
+  List<Widget> _widgetOptions;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -80,7 +82,9 @@ class HomePageState extends State<HomePage> {
                     },
                   ),
                 ]),
-            body: (userEmail != null && userGroups != null)
+            body: (userEmail != null &&
+                    userGroups != null &&
+                    _widgetOptions != null)
                 ? _widgetOptions.elementAt(widget._activeTab)
                 : Container(
                     child: Text("Loading ..."),
@@ -111,7 +115,14 @@ class HomePageState extends State<HomePage> {
     final FirebaseUser user = await _auth.currentUser();
     // Similarly we can get email as well
     // print(user.email);
-    // TODO: check if email is null or not
+
+    if (user == null || user.email == null) {
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => SignInPage()));
+    } else {
+      print("User email is " + user.email);
+    }
+
     return user.email;
   }
 
