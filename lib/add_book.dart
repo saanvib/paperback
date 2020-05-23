@@ -80,7 +80,7 @@ class AddBookPageState extends State<AddBookPage> {
                             _authorController.text,
                             widget.userEmail,
                             _selectedGroup);
-                        _pushPage(context, HomePage(2));
+                        _pushReplacementPage(context, HomePage(2));
                       }
                     },
                     // TODO: check if book already exists in database?
@@ -115,8 +115,8 @@ class AddBookPageState extends State<AddBookPage> {
     return groupList;
   }
 
-  void _pushPage(BuildContext context, Widget page) {
-    Navigator.of(context).push(
+  void _pushReplacementPage(BuildContext context, Widget page) {
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => page),
     );
   }

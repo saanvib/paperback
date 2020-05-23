@@ -72,7 +72,10 @@ class BorrowedBooksTileState extends State<BorrowedBooksTile>
                           )
                         : widget.doc["status"] == "return_requested"
                             ? Text("Your return is being processed.")
-                            : Container()),
+                            : (widget.doc["status"] == "checkout_requested")
+                                ? Text(
+                                    "Your checkout request is being processed.")
+                                : Container()),
                 Divider(height: 0, thickness: 0.5),
                 Container(
                   alignment: Alignment.centerLeft,

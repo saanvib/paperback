@@ -8,6 +8,7 @@ import 'package:paperback/signin_page.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 //TODO: test if the user is logged out then redirect to home page.
+// ignore: must_be_immutable
 class HomePage extends StatefulWidget {
   final String title = 'Home Page';
   int _activeTab;
@@ -73,8 +74,9 @@ class HomePageState extends State<HomePage> {
                     onPressed: () async {
                       await _auth.signOut();
                       signOutGoogle();
-                      Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) => SignInPage()));
+                      Navigator.of(context).pushReplacement(
+                          MaterialPageRoute<void>(
+                              builder: (_) => SignInPage()));
                     },
                   ),
                 ]),
@@ -109,6 +111,7 @@ class HomePageState extends State<HomePage> {
     final FirebaseUser user = await _auth.currentUser();
     // Similarly we can get email as well
     // print(user.email);
+    // TODO: check if email is null or not
     return user.email;
   }
 

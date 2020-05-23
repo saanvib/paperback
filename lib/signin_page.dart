@@ -118,9 +118,10 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
       onPressed: () {
         signInWithGoogle().whenComplete(() {
           if (isGoogleNewUser) {
-            _pushPage(context, RegisterPage());
+            //TODO: check if the user exists in database on home page.
+            _pushReplacementPage(context, RegisterPage());
           } else {
-            _pushPage(context, HomePage(0));
+            _pushReplacementPage(context, HomePage(0));
           }
         });
       },
@@ -185,6 +186,12 @@ void _pushPage(BuildContext context, Widget page) {
   );
 }
 
+void _pushReplacementPage(BuildContext context, Widget page) {
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute<void>(builder: (_) => page),
+  );
+}
+
 class _EmailPasswordForm extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _EmailPasswordFormState();
@@ -233,9 +240,8 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                 if (_formKey.currentState.validate()) {
                   _signInWithEmailAndPassword().whenComplete(() {
                     //TODO : test for error message when failed.
-                    _success
-                        ? _pushPage(context, HomePage(0))
-                        : _pushPage(context, SignInPage());
+                    if (_success != null && _success)
+                      _pushReplacementPage(context, HomePage(0));
                   });
                 }
               },

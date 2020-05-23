@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:paperback/add_book.dart';
 import 'package:paperback/borrowed_books_tile.dart';
@@ -16,11 +15,72 @@ class Groups extends StatefulWidget {
 }
 
 class GroupsState extends State<Groups> {
+  static const TextStyle optionStyle = TextStyle(fontSize: 30);
+  String _selectedGroup;
+  List<String> members;
+
   @override
   Widget build(BuildContext context) {
     //TODO: Show the list of groups as dropdown button.
     //TODO: When the user chooses the group, then show the members as email addresses.
-    return Text("Groups");
+    return Column(
+      children: <Widget>[
+        Text(
+          "Groups",
+          style: optionStyle,
+        ),
+        DropdownButton<String>(
+          hint: new Text('Select Group'),
+          items: loadGroupList(),
+          value: widget.userGroups[0].toString(),
+          onChanged: (value) {
+            Firestore.instance
+                .collection("groups")
+                .where("group_code", isEqualTo: value)
+                .getDocuments()
+                .then((res) => {
+                      setState(() {
+                        _selectedGroup = value;
+                        members = List.from(res.documents[0].data["members"]);
+                      })
+                    });
+          },
+          isExpanded: false,
+        ),
+        Text(
+          "Members",
+          style: TextStyle(fontSize: 25),
+        ),
+        members != null
+            ? ListView.builder(
+                padding: const EdgeInsets.all(10),
+                scrollDirection: Axis.vertical,
+                physics: NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: members.length,
+                itemBuilder: (context, index) =>
+                    _buildGroupListItem(index, context, members[index]),
+              )
+            : Text("Please select a group.")
+      ],
+    );
+  }
+
+  List<Widget> loadGroupList() {
+    List<DropdownMenuItem<String>> groupList = [];
+    for (var i = 0; i < widget.userGroups.length; i++) {
+      groupList.add(new DropdownMenuItem(
+        child: new Text(widget.userGroups[i]),
+        value: widget.userGroups[i].toString(),
+      ));
+    }
+
+    return groupList;
+  }
+
+  static Widget _buildGroupListItem(
+      int index, BuildContext context, String member) {
+    return Text(member);
   }
 }
 

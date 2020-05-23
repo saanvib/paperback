@@ -102,8 +102,8 @@ class RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _pushPage(BuildContext context, Widget page) {
-    Navigator.of(context).push(
+  void _pushReplacementPage(BuildContext context, Widget page) {
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => page),
     );
   }
@@ -118,6 +118,7 @@ class RegisterPageState extends State<RegisterPage> {
 
   // Example code for registration.
   void _register(BuildContext context) async {
+    //TODO: for google signins dont get password.
     final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(
       email: _emailController.text,
       password: _passwordController.text,
@@ -160,11 +161,12 @@ class RegisterPageState extends State<RegisterPage> {
             "members": [_emailController.text]
           });
         }
+        //TODO: For google signin - just go to home page and otherwise go to signin
         _auth.currentUser().then((val) {
           if (val != null) {
-            _pushPage(context, HomePage(0));
+            _pushReplacementPage(context, HomePage(0));
           } else {
-            _pushPage(context, SignInPage());
+            _pushReplacementPage(context, SignInPage());
           }
         });
       });

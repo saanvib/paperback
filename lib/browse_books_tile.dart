@@ -70,7 +70,8 @@ class BrowseBooksTileState extends State<BrowseBooksTile>
                             },
                             child: Text("Request Checkout"),
                           )
-                        : widget.doc["status"] == "checkout_requested"
+                        : ((widget.doc["status"] == "checkout_requested") &&
+                                (widget.doc["owner_email"] != widget.userEmail))
                             ? Text("Your checkout request is being processed.")
                             : Container()),
                 Divider(height: 0, thickness: 0.5),
