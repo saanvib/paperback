@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:paperback/add_book.dart';
 import 'package:paperback/borrowed_books_tile.dart';
 import 'package:paperback/browse_books_tile.dart';
 
@@ -20,35 +19,47 @@ class GroupsState extends State<Groups> {
   List<String> members;
   String userEmail;
   List<String> userGroups;
+  List<String> userGroupNames;
+  List<DropdownMenuItem<String>> groupDropDown;
   @override
   GroupsState(this.userEmail, this.userGroups);
+
+  @override
+  void initState() {
+    loadGroupList();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
         Text(
-          "Groups",
+          "My Groups",
           style: optionStyle,
         ),
-        DropdownButton<String>(
-          hint: new Text('Select Group'),
-          items: loadGroupList(),
-          value: userGroups[0].toString(),
-          onChanged: (value) {
-            Firestore.instance
-                .collection("groups")
-                .where("group_code", isEqualTo: value)
-                .getDocuments()
-                .then((res) => {
-                      setState(() {
-                        _selectedGroup = value;
-                        members = List.from(res.documents[0].data["members"]);
-                      })
-                    });
-          },
-          isExpanded: false,
-        ),
+        groupDropDown != null
+            ? DropdownButton<String>(
+                hint: new Text('Select Group'),
+                items: groupDropDown,
+                value: userGroups[0].toString(),
+                onChanged: (value) {
+                  Firestore.instance
+                      .collection("groups")
+                      .where("group_code", isEqualTo: value)
+                      .getDocuments()
+                      .then((res) => {
+                            setState(() {
+                              _selectedGroup = value;
+                              members =
+                                  List.from(res.documents[0].data["members"]);
+                            })
+                          });
+                },
+                isExpanded: false,
+              )
+            : Text("Loading ..."),
+        Text("Group Invite Code: $_selectedGroup"),
         Text(
           "Members",
           style: TextStyle(fontSize: 25),
@@ -68,16 +79,34 @@ class GroupsState extends State<Groups> {
     );
   }
 
-  List<Widget> loadGroupList() {
-    List<DropdownMenuItem<String>> groupList = [];
-    for (var i = 0; i < userGroups.length; i++) {
-      groupList.add(new DropdownMenuItem(
-        child: new Text(userGroups[i]),
-        value: userGroups[i].toString(),
-      ));
-    }
+  void loadGroupList() {
+    List<DropdownMenuItem<String>> gDropDown = [];
+    loadGroupNames().then((value) {
+      for (var i = 0; i < userGroups.length; i++) {
+        gDropDown.add(new DropdownMenuItem(
+          child: new Text(userGroupNames[i]),
+          value: userGroups[i].toString(),
+        ));
+      }
+      setState(() {
+        groupDropDown = List.from(gDropDown);
+      });
+    });
 
-    return groupList;
+    return;
+  }
+
+  Future<void> loadGroupNames() async {
+    userGroupNames = new List(userGroups.length);
+    for (var i = 0; i < userGroups.length; i++) {
+      var doc = await Firestore.instance
+          .collection("groups")
+          .where("group_code", isEqualTo: userGroups[i].toString())
+          .getDocuments();
+
+      userGroupNames[i] = doc.documents[0].data["group_name"].toString();
+    }
+    return;
   }
 
   static Widget _buildGroupListItem(
@@ -94,89 +123,114 @@ class Shelf extends StatefulWidget {
   State<StatefulWidget> createState() => ShelfState();
 }
 
-class ShelfState extends State<Shelf> {
+class ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
   static const TextStyle optionStyle = TextStyle(fontSize: 30);
+  TabController tabController;
+  int selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    tabController = TabController(length: 2, vsync: this);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
         children: <Widget>[
+          TabBar(
+            labelColor: Colors.deepPurple,
+            onTap: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
+            tabs: [
+              Tab(
+                text: "My Books",
+              ),
+              Tab(
+                text: "Borrowed Books",
+              ),
+            ],
+            controller: tabController,
+          ),
+
           SizedBox(
             height: 30,
           ),
-          Text(
-            'My Books',
-            style: optionStyle,
-          ),
+          selectedIndex != null && selectedIndex == 0
+              ? Text(
+                  'My Books',
+                  style: optionStyle,
+                )
+              : Text(
+                  'Borrowed Books',
+                  style: optionStyle,
+                ),
           SizedBox(
             height: 20,
           ),
           // TODO: dont like the button style. Change this.
-          RaisedButton(
-            onPressed: () async {
-              _pushPage(
-                  context, AddBookPage(widget.userEmail, widget.userGroups));
-            },
-            child: const Text('Add a Book'),
-          ),
+
           SizedBox(
             height: 10,
           ),
-          StreamBuilder(
-              stream: Firestore.instance
-                  .collection('books')
-                  .where("owner_email", isEqualTo: widget.userEmail)
-                  .snapshots(),
-              builder: (BuildContext context,
-                  AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.hasError)
-                  return new Text('Error: ${snapshot.error}');
-                switch (snapshot.connectionState) {
-                  case ConnectionState.waiting:
-                    return new Text('Loading...');
-                  default:
-                    return new ListView.builder(
-                      padding: const EdgeInsets.all(10),
-                      scrollDirection: Axis.vertical,
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: snapshot.data.documents.length,
-                      itemBuilder: (context, index) => _buildListItem(
-                          index, context, snapshot.data.documents[index]),
-                    );
-                }
-              }),
+          selectedIndex != null && selectedIndex == 0
+              ? StreamBuilder(
+                  stream: Firestore.instance
+                      .collection('books')
+                      .where("owner_email", isEqualTo: widget.userEmail)
+                      .snapshots(),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (snapshot.hasError)
+                      return new Text('Error: ${snapshot.error}');
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.waiting:
+                        return new Text('Loading...');
+                      default:
+                        return new ListView.builder(
+                          padding: const EdgeInsets.all(10),
+                          scrollDirection: Axis.vertical,
+                          physics: NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: snapshot.data.documents.length,
+                          itemBuilder: (context, index) => _buildListItem(
+                              index, context, snapshot.data.documents[index]),
+                        );
+                    }
+                  })
+              : StreamBuilder(
+                  stream: Firestore.instance
+                      .collection('books')
+                      .where("checked_out_to_email",
+                          isEqualTo: widget.userEmail)
+                      .snapshots(),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (snapshot.hasError)
+                      return new Text('Error: ${snapshot.error}');
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.waiting:
+                        return new Text('Loading...');
+                      default:
+                        return new ListView.builder(
+                          padding: const EdgeInsets.all(10),
+                          scrollDirection: Axis.vertical,
+                          physics: NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: snapshot.data.documents.length,
+                          itemBuilder: (context, index) =>
+                              _buildBorrowedListItem(index, context,
+                                  snapshot.data.documents[index]),
+                        );
+                    }
+                  }),
           SizedBox(
             height: 30,
           ),
-          Text(
-            'Borrowed Books',
-            style: optionStyle,
-          ),
-          StreamBuilder(
-              stream: Firestore.instance
-                  .collection('books')
-                  .where("checked_out_to_email", isEqualTo: widget.userEmail)
-                  .snapshots(),
-              builder: (BuildContext context,
-                  AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.hasError)
-                  return new Text('Error: ${snapshot.error}');
-                switch (snapshot.connectionState) {
-                  case ConnectionState.waiting:
-                    return new Text('Loading...');
-                  default:
-                    return new ListView.builder(
-                      padding: const EdgeInsets.all(10),
-                      scrollDirection: Axis.vertical,
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: snapshot.data.documents.length,
-                      itemBuilder: (context, index) => _buildBorrowedListItem(
-                          index, context, snapshot.data.documents[index]),
-                    );
-                }
-              }),
         ],
       ),
     );
@@ -190,12 +244,6 @@ class ShelfState extends State<Shelf> {
   static Widget _buildListItem(
       int index, BuildContext context, DocumentSnapshot documentSnapshot) {
     return MyBooksTile(documentSnapshot);
-  }
-
-  void _pushPage(BuildContext context, Widget page) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => page),
-    );
   }
 }
 

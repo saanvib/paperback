@@ -120,7 +120,6 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
       onPressed: () {
         signInWithGoogle().whenComplete(() {
           if (isGoogleNewUser) {
-            //TODO: check if the user exists in database on home page.
             _pushReplacementPage(context, GoogleRegisterPage());
           } else {
             _pushReplacementPage(context, HomePage(0));
@@ -242,7 +241,6 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
               onPressed: () async {
                 if (_formKey.currentState.validate()) {
                   _signInWithEmailAndPassword().whenComplete(() {
-                    //TODO : test for error message when failed.
                     if (_success != null && _success)
                       _pushReplacementPage(context, HomePage(0));
                   });

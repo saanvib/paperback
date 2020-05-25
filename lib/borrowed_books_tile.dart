@@ -49,7 +49,12 @@ class BorrowedBooksTileState extends State<BorrowedBooksTile>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           ListTile(
-            leading: Icon(Icons.book),
+            leading: widget.doc["status"] == "checkout_requested"
+                ? Icon(
+                    Icons.sync,
+                    color: Colors.amber,
+                  )
+                : Icon(Icons.book),
             title: Text(widget.doc["title"]),
             subtitle: Text(widget.doc["author"]),
             trailing: Icon(Icons.more_vert),
@@ -61,6 +66,10 @@ class BorrowedBooksTileState extends State<BorrowedBooksTile>
             sizeFactor: animationView,
             child: Column(
               children: <Widget>[
+                Container(
+                    padding: EdgeInsets.all(15),
+                    child: Text("The owner of this book is " +
+                        widget.doc["owner_email"])),
                 Container(
                     padding: EdgeInsets.all(15),
                     child: widget.doc["status"] == "checked_out"

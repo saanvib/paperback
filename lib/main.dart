@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paperback/signin_page.dart';
+import 'package:paperback/home_page.dart';
 
 void main() => runApp(MyApp());
 
@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
       ),
-      home: SignInPage(),
+      home: HomePage(0),
     );
   }
 }

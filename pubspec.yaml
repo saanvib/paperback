@@ -28,8 +28,8 @@ dependencies:
   firebase_core: ^0.4.4
   firebase_analytics:
   cloud_firestore:
-  firebase_dynamic_links: ^0.3.0
   random_string: ^2.0.1
+  firebase_dynamic_links: ^0.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

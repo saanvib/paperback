@@ -25,6 +25,9 @@ class RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _groupCodeController = TextEditingController();
+  final TextEditingController _groupNameController = TextEditingController();
+  bool isNewGroup;
+  String groupValue;
   bool _success;
   String _userEmail;
   @override
@@ -64,16 +67,64 @@ class RegisterPageState extends State<RegisterPage> {
                 PasswordFormField(
                   controller: _passwordController,
                 ),
-                TextFormField(
-                  controller: _groupCodeController,
-                  decoration: const InputDecoration(labelText: 'Group Code'),
-                  validator: (String value) {
-//                    if (value.isEmpty) {
-//                      return 'Please enter your group code';
-//                    }
-                    return null;
-                  },
+                Row(
+                  children: <Widget>[
+                    Radio(
+                      value: "Existing Group",
+                      groupValue: groupValue,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onChanged: (v) {
+                        setState(() {
+                          groupValue = "Existing Group";
+                          isNewGroup = false;
+                        });
+                      },
+                    ),
+                    Text(
+                      "Existing Group",
+                    ),
+                    Container(width: 10),
+                    Radio(
+                      value: "New Group",
+                      groupValue: groupValue,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onChanged: (v) {
+                        setState(() {
+                          groupValue = "New Group";
+                          isNewGroup = true;
+                        });
+                      },
+                    ),
+                    Text(
+                      "New Group",
+                    ),
+                  ],
                 ),
+                (isNewGroup != null && !isNewGroup)
+                    ? TextFormField(
+                        controller: _groupCodeController,
+                        decoration:
+                            const InputDecoration(labelText: 'Group Code'),
+                        validator: (String value) {
+                          if (value.isEmpty) {
+                            return 'Please enter your group code';
+                          }
+                          return null;
+                        },
+                      )
+                    : isNewGroup != null
+                        ? TextFormField(
+                            controller: _groupNameController,
+                            decoration: const InputDecoration(
+                                labelText: 'Enter a New Group Name'),
+                            validator: (String value) {
+                              if (value.isEmpty) {
+                                return 'Please enter a group name';
+                              }
+                              return null;
+                            },
+                          )
+                        : Container(),
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                   alignment: Alignment.center,
@@ -113,12 +164,13 @@ class RegisterPageState extends State<RegisterPage> {
     // Clean up the controller when the Widget is disposed
     _emailController.dispose();
     _passwordController.dispose();
+    _groupCodeController.dispose();
+    _groupNameController.dispose();
     super.dispose();
   }
 
   // Example code for registration.
   void _register(BuildContext context) async {
-    //TODO: for google signins dont get password.
     final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(
       email: _emailController.text,
       password: _passwordController.text,
@@ -128,7 +180,6 @@ class RegisterPageState extends State<RegisterPage> {
       setState(() {
         _success = true;
         _userEmail = user.email;
-        // TODO: handle radio button and scenario with creating new group
         // TODO: check if the user exists and give error
         // TODO: take group name (home page?)
         if (_groupCodeController.text != "") {
@@ -158,10 +209,11 @@ class RegisterPageState extends State<RegisterPage> {
           });
           Firestore.instance.collection("groups").add({
             "group_code": newGroupId,
-            "members": [_emailController.text]
+            "members": [_emailController.text],
+            "group_name": _groupNameController.text,
           });
         }
-        //TODO: For google signin - just go to home page and otherwise go to signin
+
         _auth.currentUser().then((val) {
           if (val != null) {
             _pushReplacementPage(context, HomePage(0));

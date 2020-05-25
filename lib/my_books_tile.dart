@@ -49,7 +49,15 @@ class MyBooksTileState extends State<MyBooksTile>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           ListTile(
-            leading: Icon(Icons.book),
+            leading: (widget.doc['status'] != "not_checked_out" &&
+                    widget.doc['status'] != "checked_out")
+                ? Icon(
+                    Icons.notifications_active,
+                    color: Colors.amber,
+                  )
+                : widget.doc["status"] == "not_checked_out"
+                    ? Icon(Icons.book)
+                    : Icon(Icons.check_box),
             title: Text(widget.doc["title"]),
             subtitle: Text(widget.doc["author"]),
             trailing: Icon(Icons.more_vert),
@@ -61,6 +69,22 @@ class MyBooksTileState extends State<MyBooksTile>
             sizeFactor: animationView,
             child: Column(
               children: <Widget>[
+                Container(
+                    padding: EdgeInsets.all(15),
+                    child: widget.doc["status"] == "checkout_requested"
+                        ? Text(widget.doc["checked_out_to_email"] +
+                            " would like to checkout this book")
+                        : widget.doc["status"] == "return_requested"
+                            ? Text(widget.doc["checked_out_to_email"] +
+                                " would like to return this book")
+                            : widget.doc["status"] == "checked_out"
+                                ? Text(
+                                    "This book is currently checked out to " +
+                                        widget.doc["checked_out_to_email"])
+                                : widget.doc["status"] == "not_checked_out"
+                                    ? Text(
+                                        "This book is currently sitting on your shelf!")
+                                    : Container()),
                 Container(
                     padding: EdgeInsets.all(15),
                     child: widget.doc["status"] == "checkout_requested"
