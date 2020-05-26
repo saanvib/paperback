@@ -23,7 +23,6 @@ class HomePageState extends State<HomePage> {
   static const TextStyle optionStyle = TextStyle(fontSize: 30);
   static String userEmail;
   static List<String> userGroups;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String userFullName;
   String userInitials;
   @override
@@ -68,14 +67,6 @@ class HomePageState extends State<HomePage> {
     });
   }
 
-  void _openEndDrawer() {
-    _scaffoldKey.currentState.openEndDrawer();
-  }
-
-  void _closeEndDrawer() {
-    Navigator.of(context).pop();
-  }
-
   @override
   Widget build(BuildContext context) {
     return (userFullName == null || userEmail == null || userInitials == null)
@@ -105,7 +96,8 @@ class HomePageState extends State<HomePage> {
             body: (userEmail != null &&
                     userGroups != null &&
                     _widgetOptions != null)
-                ? SingleChildScrollView(child: _widgetOptions.elementAt(widget._activeTab))
+                ? SingleChildScrollView(
+                    child: _widgetOptions.elementAt(widget._activeTab))
                 : Container(
                     child: Text("Loading ..."),
                   ),
