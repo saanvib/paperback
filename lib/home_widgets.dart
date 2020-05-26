@@ -7,10 +7,12 @@ import 'my_books_tile.dart';
 
 class Groups extends StatefulWidget {
   final String userEmail;
+  final String userFullName;
   final List<String> userGroups;
-  Groups(this.userEmail, this.userGroups);
+  Groups(this.userEmail, this.userGroups, this.userFullName);
   @override
-  State<StatefulWidget> createState() => GroupsState(userEmail, userGroups);
+  State<StatefulWidget> createState() =>
+      GroupsState(userEmail, userGroups, userFullName);
 }
 
 class GroupsState extends State<Groups> {
@@ -20,9 +22,10 @@ class GroupsState extends State<Groups> {
   String userEmail;
   List<String> userGroups;
   List<String> userGroupNames;
+  String userFullName;
   List<DropdownMenuItem<String>> groupDropDown;
   @override
-  GroupsState(this.userEmail, this.userGroups);
+  GroupsState(this.userEmail, this.userGroups, this.userFullName);
 
   @override
   void initState() {
@@ -34,13 +37,14 @@ class GroupsState extends State<Groups> {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
+        SizedBox(height: 20),
         Text(
           "My Groups",
           style: optionStyle,
         ),
         groupDropDown != null
             ? DropdownButton<String>(
-                hint: new Text('Select Group'),
+                hint: new Text('Select A Group'),
                 items: groupDropDown,
                 value: userGroups[0].toString(),
                 onChanged: (value) {
@@ -59,7 +63,11 @@ class GroupsState extends State<Groups> {
                 isExpanded: false,
               )
             : Text("Loading ..."),
-        Text("Group Invite Code: $_selectedGroup"),
+        SizedBox(height: 20),
+        Center(
+            child: Text(
+                "Invite your friends with the following code: $_selectedGroup")),
+        SizedBox(height: 10),
         Text(
           "Members",
           style: TextStyle(fontSize: 25),
@@ -118,7 +126,8 @@ class GroupsState extends State<Groups> {
 class Shelf extends StatefulWidget {
   final String userEmail;
   final List<String> userGroups;
-  Shelf(this.userEmail, this.userGroups);
+  final String userFullName;
+  Shelf(this.userEmail, this.userGroups, this.userFullName);
   @override
   State<StatefulWidget> createState() => ShelfState();
 }
@@ -132,6 +141,8 @@ class ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     tabController = TabController(length: 2, vsync: this);
+    tabController.index = 0;
+    selectedIndex = 0;
   }
 
   @override
@@ -156,7 +167,6 @@ class ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
             ],
             controller: tabController,
           ),
-
           SizedBox(
             height: 30,
           ),
@@ -172,8 +182,6 @@ class ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
           SizedBox(
             height: 20,
           ),
-          // TODO: dont like the button style. Change this.
-
           SizedBox(
             height: 10,
           ),
@@ -249,8 +257,9 @@ class ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
 
 class Browse extends StatefulWidget {
   final String userEmail;
+  final String userFullName;
   final List<String> userGroups;
-  Browse(this.userEmail, this.userGroups);
+  Browse(this.userEmail, this.userGroups, this.userFullName);
   @override
   State<StatefulWidget> createState() => BrowseState();
 }

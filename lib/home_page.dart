@@ -51,9 +51,9 @@ class HomePageState extends State<HomePage> {
           print(userGroups);
           // print("Inside setState $result $userEmail");
           _widgetOptions = <Widget>[
-            Groups(userEmail, userGroups),
-            Browse(userEmail, userGroups),
-            Shelf(userEmail, userGroups),
+            Groups(userEmail, userGroups, userFullName),
+            Browse(userEmail, userGroups, userFullName),
+            Shelf(userEmail, userGroups, userFullName),
           ];
         });
       });
@@ -105,7 +105,7 @@ class HomePageState extends State<HomePage> {
             body: (userEmail != null &&
                     userGroups != null &&
                     _widgetOptions != null)
-                ? _widgetOptions.elementAt(widget._activeTab)
+                ? SingleChildScrollView(child: _widgetOptions.elementAt(widget._activeTab))
                 : Container(
                     child: Text("Loading ..."),
                   ),
@@ -218,7 +218,7 @@ class HomePageState extends State<HomePage> {
         ? ListTile(
             title: Text(documentSnapshot["title"]),
             subtitle: (documentSnapshot["status"] == "checkout_requested")
-                ? Text("Book requested by " +
+                ? Text("This book has been requested by " +
                     documentSnapshot["checked_out_to_email"])
                 : Text(documentSnapshot["checked_out_to_email"] +
                     " would like to return the book."),
@@ -261,7 +261,7 @@ class HomePageState extends State<HomePage> {
   }
 
   void signOutGoogle() async {
-    await googleSignIn.signOut();
+    await googleSignIn.disconnect();
 
     print("User Sign Out");
   }

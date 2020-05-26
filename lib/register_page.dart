@@ -181,7 +181,6 @@ class RegisterPageState extends State<RegisterPage> {
         _success = true;
         _userEmail = user.email;
         // TODO: check if the user exists and give error
-        // TODO: take group name (home page?)
         if (_groupCodeController.text != "") {
           Firestore.instance.collection('users').add({
             "full_name": _nameController.text,

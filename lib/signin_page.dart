@@ -8,10 +8,14 @@ import 'package:paperback/register_page.dart';
 import 'google_register_page.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
-final GoogleSignIn googleSignIn = GoogleSignIn();
+final GoogleSignIn googleSignIn = GoogleSignIn(
+  scopes: <String>[
+    'email',
+  ],
+);
 
 class SignInPage extends StatefulWidget {
-  final String title = 'My City';
+  final String title = 'Paperback';
   @override
   State<StatefulWidget> createState() => SignInPageState();
 }
@@ -30,7 +34,7 @@ class SignInPageState extends State<SignInPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     SizedBox(
-                      height: 30,
+                      height: 20,
                     ),
                     Center(
                         child: Text(
