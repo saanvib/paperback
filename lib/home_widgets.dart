@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:paperback/borrowed_books_tile.dart';
 import 'package:paperback/browse_books_tile.dart';
 import 'package:paperback/global_app_data.dart';
-import 'package:paperback/home_page.dart';
 import 'package:random_string/random_string.dart';
 
+import 'home_page.dart';
 import 'my_books_tile.dart';
 
 class Groups extends StatefulWidget {
@@ -46,14 +46,20 @@ class GroupsState extends State<Groups> {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 30),
           child: Text(
-            "Welcome Book Worm to your own private library. Create your own group or join an existing one.\  "
-            "And then voila borrow and lend books among your friends. Its that simple.",
+            "Welcome, Book Worm, to your own private library. Create your own group or join an existing one.\  "
+            "And then... Voila! Borrow and lend books among your friends. It\'s that simple!",
             style: TextStyle(fontSize: 15),
           ),
         ),
+        SizedBox(
+          height: 10,
+        ),
         FlatButton(
-          color: Colors.purpleAccent,
-          child: Text("Create Group"),
+          color: Colors.purple,
+          child: Text(
+            "Create Group",
+            style: TextStyle(color: Colors.white),
+          ),
           onPressed: () {
             _createNewGroupDialog();
           },
@@ -117,28 +123,31 @@ class GroupsState extends State<Groups> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: new Text("Create a Group"),
-          content: Column(
-            children: [
-              Text("This will create a new group."),
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Group Name'),
-                validator: (String value) {
-                  if (value.isEmpty) {
-                    return 'Enter a group name.';
-                  }
-                  return null;
-                },
-              ),
-            ],
+          content: Container(
+            height: 100,
+            child: Column(
+              children: [
+                Text("This will create a new group."),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(labelText: 'Group Name'),
+                  validator: (String value) {
+                    if (value.isEmpty) {
+                      return 'Enter a group name.';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
           ),
           actions: <Widget>[
             new FlatButton(
               child: new Text("Add"),
-              onPressed: () {
+              onPressed: () async {
                 String newGroupId = "g_" + randomAlphaNumeric(6);
 
-                Firestore.instance.collection("groups").add({
+                await Firestore.instance.collection("groups").add({
                   "group_code": newGroupId,
                   "members": [userEmail],
                   "group_name": _titleController.text,
@@ -154,8 +163,10 @@ class GroupsState extends State<Groups> {
                       .updateData({
                     "group_code": FieldValue.arrayUnion([newGroupId])
                   });
-                  HomePageState.resetInit();
-                  GlobalAppData().resetState();
+
+                  setState(() {
+                    HomePageState.resetInit();
+                  });
                 });
                 Navigator.of(context).pop();
               },

@@ -15,13 +15,44 @@ class GlobalAppData {
     return _singleton;
   }
 
+  static Map<String, String> getUserMap() {
+    if (isInitialized)
+      return userMap;
+    else
+      return null;
+  }
+
+  static Map<String, String> getGroupMap() {
+    if (isInitialized)
+      return groupMap;
+    else
+      return null;
+  }
+
+  static Map<String, List<String>> getMemberMap() {
+    if (isInitialized)
+      return memberMap;
+    else
+      return null;
+  }
+
+  static String getUserEmail() {
+    if (isInitialized)
+      return userEmail;
+    else
+      return null;
+  }
+
   void resetState() {
     isInitialized = false;
   }
 
   GlobalAppData._internal();
-  Future<bool> init() async {
-    if (isInitialized) return true;
+
+  Future<bool> init(bool reload) async {
+    if (isInitialized && !reload) return true;
+
+    if (reload) isInitialized = false;
 
     print("init started");
     final FirebaseUser user = await FirebaseAuth.instance.currentUser();
@@ -30,6 +61,7 @@ class GlobalAppData {
       return false;
     }
     userEmail = user.email;
+    print("usermail - $userEmail");
 
     QuerySnapshot groupDocs = await Firestore.instance
         .collection("groups")
@@ -37,6 +69,7 @@ class GlobalAppData {
         .getDocuments();
 
     // if the user does not exist in database - take them to registration
+    //TODO : not needed here. move this somewhere else.
     if (groupDocs.documents.length == 0) {
       print("No user found");
       return false;
@@ -60,6 +93,15 @@ class GlobalAppData {
     }
     isInitialized = true;
     print("**********init ended");
+    print("userMap: ");
+    print(userMap);
+    print("groupMap: ");
+    print(groupMap);
+    print("userEmail: ");
+    print(userEmail);
+    print("memberMap");
+    print(memberMap);
+
     return true;
   }
 }

@@ -72,11 +72,15 @@ class BrowseBooksTileState extends State<BrowseBooksTile>
                                   (widget.doc["owner_email"] !=
                                       widget.userEmail))
                               ? RaisedButton(
+                                  color: Colors.purple,
                                   onPressed: () {
                                     Book.requestCheckout(widget.doc["book_id"],
                                         widget.userEmail);
                                   },
-                                  child: Text("Request Book"),
+                                  child: Text(
+                                    "Request Book",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 )
                               : ((widget.doc["status"] ==
                                           "checkout_requested") &&

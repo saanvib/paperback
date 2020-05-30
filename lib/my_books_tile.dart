@@ -74,45 +74,58 @@ class MyBooksTileState extends State<MyBooksTile>
                     padding: EdgeInsets.all(15),
                     child: widget.doc["status"] == "checkout_requested"
                         ? Text(GlobalAppData
-                                    .userMap[widget.doc["checked_out_to_email"]]
-                                [0] +
+                                .userMap[widget.doc["checked_out_to_email"]] +
                             " would like to checkout this book")
                         : widget.doc["status"] == "return_requested"
-                            ? Text(
-                                GlobalAppData.userMap[widget.doc["checked_out_to_email"]] +
-                                    " would like to return this book")
+                            ? Text(GlobalAppData.userMap[
+                                    widget.doc["checked_out_to_email"]] +
+                                " would like to return this book")
                             : widget.doc["status"] == "checked_out"
-                                ? Text("This book is currently checked out to " +
-                                    GlobalAppData.userMap[
-                                        widget.doc["checked_out_to_email"]][0])
+                                ? Text(
+                                    "This book is currently checked out to " +
+                                        GlobalAppData.userMap[
+                                            widget.doc["checked_out_to_email"]])
                                 : widget.doc["status"] == "not_checked_out"
-                                    ? Text("This book is currently sitting on your shelf!")
+                                    ? Text(
+                                        "This book is currently sitting on your shelf!")
                                     : Container()),
                 Container(
                     padding: EdgeInsets.all(15),
                     child: widget.doc["status"] == "checkout_requested"
                         ? RaisedButton(
+                            color: Colors.purple,
                             onPressed: () {
                               Book.checkoutBook(widget.doc["book_id"]);
                             },
-                            child: Text("Deliver"),
+                            child: Text(
+                              "Deliver",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           )
                         : widget.doc["status"] == "return_requested"
                             ? RaisedButton(
+                                color: Colors.purple,
                                 onPressed: () {
                                   Book.returnBook(widget.doc["book_id"]);
                                 },
-                                child: Text("Receive Book"),
+                                child: Text(
+                                  "Receive Book",
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               )
                             : Container()),
                 Container(
                   padding: EdgeInsets.all(15),
                   child: widget.doc["status"] == "not_checked_out"
                       ? RaisedButton(
+                          color: Colors.purple,
                           onPressed: () {
                             _showDialog();
                           },
-                          child: Text("Delete Book"),
+                          child: Text(
+                            "Delete Book",
+                            style: TextStyle(color: Colors.white),
+                          ),
                         )
                       : Container(),
                 ),

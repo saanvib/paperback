@@ -177,7 +177,7 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
     if (authResult.additionalUserInfo.isNewUser) {
       isGoogleNewUser = true;
     } else {
-      print("isgooglenewuser true");
+      isGoogleNewUser = false;
     }
 
     return 'signInWithGoogle succeeded: $user';

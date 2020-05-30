@@ -2,7 +2,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:paperback/google_register_page.dart';
 import 'package:paperback/signin_page.dart';
 
 import 'add_book.dart';
@@ -46,171 +45,175 @@ class HomePageState extends State<HomePage> {
     isInitialized = false;
   }
 
+  Future<bool> init() async {
+    bool initDone;
+    if (!isInitialized)
+      initDone = await appData.init(true);
+    else
+      initDone = await appData.init(false);
+
+    userEmail = GlobalAppData.userEmail;
+    print("init $userEmail");
+    userGroups = GlobalAppData.memberMap[userEmail];
+    userFullName = GlobalAppData.userMap[userEmail];
+    print(userFullName);
+    userInitials = userFullName.split(" ").length > 1
+        ? userFullName.split(" ")[0][0] + userFullName.split(" ")[1][0]
+        : userFullName[0];
+    userInitials = userInitials.toUpperCase();
+    // print("groups: ");
+    // print(userGroups);
+    // print("Inside setState $result $userEmail");
+    _widgetOptions = <Widget>[
+      Groups(userEmail, userGroups, userFullName),
+      Browse(userEmail, userGroups, userFullName),
+      Shelf(userEmail, userGroups, userFullName),
+    ];
+    isInitialized = true;
+
+    return initDone;
+  }
+
   @override
   Widget build(BuildContext context) {
-    appData.init().then((value) {
-      if (!value) {
-        _pushPage(context, GoogleRegisterPage());
-      } else if (!isInitialized) {
-        userEmail = GlobalAppData.userEmail;
-        print(userEmail);
-        userGroups = GlobalAppData.memberMap[userEmail];
-        userFullName = GlobalAppData.userMap[userEmail];
-        print(userFullName);
-        userInitials = userFullName.split(" ").length > 1
-            ? userFullName.split(" ")[0][0] + userFullName.split(" ")[1][0]
-            : userFullName[0];
-        userInitials = userInitials.toUpperCase();
-        print("groups: ");
-        print(userGroups);
-        // print("Inside setState $result $userEmail");
-        _widgetOptions = <Widget>[
-          Groups(userEmail, userGroups, userFullName),
-          Browse(userEmail, userGroups, userFullName),
-          Shelf(userEmail, userGroups, userFullName),
-        ];
-        setState(() {
-          isInitialized = true;
-        });
-      }
-    });
+    return FutureBuilder(
+      future: init(),
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        return buildApp(context, snapshot);
+      },
+    );
+  }
 
-    return (!isInitialized)
-        ? Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          )
-        : Scaffold(
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                _pushPage(context, AddBookPage(userEmail, userGroups));
-              },
-              child: Icon(Icons.add),
-              backgroundColor: Colors.purple,
-            ),
-            appBar: AppBar(
-              title: Text(widget.title),
-              // leading: new Container(),
-              actions: [
-                Builder(
-                  builder: (context) => IconButton(
-                    icon: Icon(Icons.notifications),
-                    onPressed: () => Scaffold.of(context).openEndDrawer(),
-                    tooltip:
-                        MaterialLocalizations.of(context).openAppDrawerTooltip,
-                  ),
-                ),
-              ],
-            ),
-            body: (userEmail != null &&
-                    userGroups != null &&
-                    _widgetOptions != null)
-                ? SingleChildScrollView(
-                    child: _widgetOptions.elementAt(widget._activeTab))
-                : Container(
-                    child: Text("Loading ..."),
-                  ),
-            drawer: Drawer(
-              // Add a ListView to the drawer. This ensures the user can scroll
-              // through the options in the drawer if there isn't enough vertical
-              // space to fit everything.
-              child: ListView(
-                // Important: Remove any padding from the ListView.
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  UserAccountsDrawerHeader(
-                    accountName: Text(userFullName),
-                    accountEmail: Text(userEmail),
-                    currentAccountPicture: CircleAvatar(
-                      child: new Text(userInitials),
-                    ),
-                  ),
-//                  ListTile(
-//                    title: Text('Edit Profile'),
-//                    onTap: () {
-//                      // Update the state of the app
-//                      // ...
-//                      // Then close the drawer
-//                      Navigator.pop(context);
-//                    },
-//                  ),
-                  Divider(),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 70),
-                    child: RaisedButton(
-                      child: Text("Logout"),
-                      onPressed: () async {
-                        await _auth.signOut();
-                        signOutGoogle();
-                        Navigator.of(context).pushReplacement(
-                            MaterialPageRoute<void>(
-                                builder: (_) => SignInPage()));
-                      },
-                    ),
-                  )
-                ],
+  Widget buildApp(BuildContext context, AsyncSnapshot snapshot) {
+    if (snapshot.hasData)
+      return Scaffold(
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _pushPage(context, AddBookPage(userEmail, userGroups));
+          },
+          child: Icon(Icons.add),
+          backgroundColor: Colors.purple,
+        ),
+        appBar: AppBar(
+          title: Text("Home"),
+          actions: [
+            Builder(
+              builder: (context) => IconButton(
+                icon: Icon(Icons.notifications),
+                onPressed: () => Scaffold.of(context).openEndDrawer(),
+                tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
               ),
             ),
-            endDrawer: Drawer(
-              child: Column(
-                children: <Widget>[
-                  Container(
-                    padding: EdgeInsets.all(15),
-                  ),
-                  const Text(
-                    'Notifications',
-                    style: optionStyle,
-                  ),
-                  StreamBuilder(
-                      stream: Firestore.instance
-                          .collection('books')
-                          .where("owner_email", isEqualTo: userEmail)
-                          .snapshots(),
-                      builder: (BuildContext context,
-                          AsyncSnapshot<QuerySnapshot> snapshot) {
-                        if (snapshot.hasError)
-                          return new Text('Error: ${snapshot.error}');
-                        switch (snapshot.connectionState) {
-                          case ConnectionState.waiting:
-                            return new Text('Loading...');
-                          default:
-                            return new ListView.builder(
-                              padding: const EdgeInsets.all(10),
-                              scrollDirection: Axis.vertical,
-                              physics: NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              itemCount: snapshot.data.documents.length,
-                              itemBuilder: (context, index) => _buildListItem(
-                                  index,
-                                  context,
-                                  snapshot.data.documents[index]),
-                            );
-                        }
-                      }),
-                ],
+          ],
+        ),
+        body: SingleChildScrollView(
+            child: _widgetOptions.elementAt(widget._activeTab)),
+        drawer: Drawer(
+          child: (isInitialized)
+              ? ListView(
+                  padding: EdgeInsets.zero,
+                  children: <Widget>[
+                    UserAccountsDrawerHeader(
+                      accountName: Text(userFullName),
+                      accountEmail: Text(userEmail),
+                      currentAccountPicture: CircleAvatar(
+                        child: new Text(userInitials),
+                      ),
+                    ),
+                    Divider(),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 70),
+                      child: RaisedButton(
+                        color: Colors.purple,
+                        child: Text(
+                          "Logout",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        onPressed: () async {
+                          await _auth.signOut();
+                          signOutGoogle();
+                          resetInit();
+                          Navigator.of(context).pushReplacement(
+                              MaterialPageRoute<void>(
+                                  builder: (_) => SignInPage()));
+                        },
+                      ),
+                    )
+                  ],
+                )
+              : Text("Loading.. "),
+        ),
+        endDrawer: Drawer(
+          child: ListView(
+            children: <Widget>[
+              DrawerHeader(
+                child: Column(
+                  children: [
+                    Text(
+                      'Notifications',
+                      style: optionStyle,
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    Text(
+                        "Please accept return or deliver the books from list below. ")
+                  ],
+                ),
               ),
+              StreamBuilder(
+                  stream: Firestore.instance
+                      .collection('books')
+                      .where("owner_email", isEqualTo: userEmail)
+                      .snapshots(),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (snapshot.hasError)
+                      return new Text('Error: ${snapshot.error}');
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.waiting:
+                        return new Text('Loading...');
+                      default:
+                        return new ListView.builder(
+                          padding: const EdgeInsets.all(10),
+                          scrollDirection: Axis.vertical,
+                          physics: NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: snapshot.data.documents.length,
+                          itemBuilder: (context, index) => _buildListItem(
+                              index, context, snapshot.data.documents[index]),
+                        );
+                    }
+                  }),
+            ],
+          ),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              title: Text('Home'),
             ),
-            bottomNavigationBar: BottomNavigationBar(
-              items: const <BottomNavigationBarItem>[
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  title: Text('Home'),
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.library_books),
-                  title: Text('Browse'),
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.playlist_add_check),
-                  title: Text('My Shelf'),
-                ),
-              ],
-              currentIndex: widget._activeTab,
-              //selectedItemColor: MyColors.lemonDark,
-              onTap: _onItemTapped,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.library_books),
+              title: Text('Browse'),
             ),
-          );
+            BottomNavigationBarItem(
+              icon: Icon(Icons.playlist_add_check),
+              title: Text('My Shelf'),
+            ),
+          ],
+          currentIndex: widget._activeTab,
+//selectedItemColor: MyColors.lemonDark,
+          onTap: _onItemTapped,
+        ),
+      );
+    else
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
   }
 
   static Widget _buildListItem(
@@ -226,16 +229,24 @@ class HomePageState extends State<HomePage> {
                     " would like to return the book."),
             trailing: (documentSnapshot["status"] == "checkout_requested")
                 ? RaisedButton(
+                    color: Colors.purple,
                     onPressed: () {
                       Book.checkoutBook(documentSnapshot["book_id"]);
                     },
-                    child: Text("Deliver"),
+                    child: Text(
+                      "Deliver",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   )
                 : RaisedButton(
+                    color: Colors.purple,
                     onPressed: () {
                       Book.returnBook(documentSnapshot["book_id"]);
                     },
-                    child: Text("Accept Return"),
+                    child: Text(
+                      "Accept Return",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
           )
         : Container();
