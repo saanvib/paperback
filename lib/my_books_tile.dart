@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:paperback/global_app_data.dart';
 
 import 'model/model_book.dart';
 
@@ -72,18 +73,20 @@ class MyBooksTileState extends State<MyBooksTile>
                 Container(
                     padding: EdgeInsets.all(15),
                     child: widget.doc["status"] == "checkout_requested"
-                        ? Text(widget.doc["checked_out_to_email"] +
+                        ? Text(GlobalAppData
+                                    .userMap[widget.doc["checked_out_to_email"]]
+                                [0] +
                             " would like to checkout this book")
                         : widget.doc["status"] == "return_requested"
-                            ? Text(widget.doc["checked_out_to_email"] +
-                                " would like to return this book")
+                            ? Text(
+                                GlobalAppData.userMap[widget.doc["checked_out_to_email"]] +
+                                    " would like to return this book")
                             : widget.doc["status"] == "checked_out"
-                                ? Text(
-                                    "This book is currently checked out to " +
-                                        widget.doc["checked_out_to_email"])
+                                ? Text("This book is currently checked out to " +
+                                    GlobalAppData.userMap[
+                                        widget.doc["checked_out_to_email"]][0])
                                 : widget.doc["status"] == "not_checked_out"
-                                    ? Text(
-                                        "This book is currently sitting on your shelf!")
+                                    ? Text("This book is currently sitting on your shelf!")
                                     : Container()),
                 Container(
                     padding: EdgeInsets.all(15),
@@ -102,6 +105,17 @@ class MyBooksTileState extends State<MyBooksTile>
                                 child: Text("Receive Book"),
                               )
                             : Container()),
+                Container(
+                  padding: EdgeInsets.all(15),
+                  child: widget.doc["status"] == "not_checked_out"
+                      ? RaisedButton(
+                          onPressed: () {
+                            _showDialog();
+                          },
+                          child: Text("Delete Book"),
+                        )
+                      : Container(),
+                ),
                 Divider(height: 0, thickness: 0.5),
                 Container(
                   alignment: Alignment.centerLeft,
@@ -128,6 +142,34 @@ class MyBooksTileState extends State<MyBooksTile>
           ),
         ],
       ),
+    );
+  }
+
+  void _showDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text("Delete Book?"),
+          content: new Text(
+              "This will delete your book from your group\'s book database."),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("Delete"),
+              onPressed: () {
+                Book.deleteBook(widget.doc["book_id"]);
+                Navigator.of(context).pop();
+              },
+            ),
+            new FlatButton(
+              child: new Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

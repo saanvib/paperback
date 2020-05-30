@@ -2,13 +2,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:paperback/google_register_page.dart';
 import 'package:paperback/signin_page.dart';
 
 import 'add_book.dart';
+import 'global_app_data.dart';
 import 'home_widgets.dart';
 import 'model/model_book.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
+GlobalAppData appData = new GlobalAppData();
 
 // ignore: must_be_immutable
 class HomePage extends StatefulWidget {
@@ -25,38 +28,10 @@ class HomePageState extends State<HomePage> {
   static List<String> userGroups;
   String userFullName;
   String userInitials;
+  static bool isInitialized = false;
   @override
   void initState() {
     super.initState();
-
-    getCurrentUser().then((result) {
-      // If we need to rebuild the widget with the resulting data,
-      // make sure to use `setState`
-      //userEmail = result;
-      userEmail = result;
-      Firestore.instance
-          .collection('users')
-          .where("email", isEqualTo: userEmail)
-          .getDocuments()
-          .then((value) {
-        setState(() {
-          userGroups = List.from(value.documents[0].data["group_code"]);
-          userFullName = value.documents[0].data["full_name"];
-          userInitials = userFullName.split(" ").length > 1
-              ? userFullName.split(" ")[0][0] + userFullName.split(" ")[1][0]
-              : userFullName[0];
-          userInitials = userInitials.toUpperCase();
-          print("groups: ");
-          print(userGroups);
-          // print("Inside setState $result $userEmail");
-          _widgetOptions = <Widget>[
-            Groups(userEmail, userGroups, userFullName),
-            Browse(userEmail, userGroups, userFullName),
-            Shelf(userEmail, userGroups, userFullName),
-          ];
-        });
-      });
-    });
   }
 
   List<Widget> _widgetOptions;
@@ -67,10 +42,45 @@ class HomePageState extends State<HomePage> {
     });
   }
 
+  static void resetInit() {
+    isInitialized = false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return (userFullName == null || userEmail == null || userInitials == null)
-        ? Text("Loading ... ")
+    appData.init().then((value) {
+      if (!value) {
+        _pushPage(context, GoogleRegisterPage());
+      } else if (!isInitialized) {
+        userEmail = GlobalAppData.userEmail;
+        print(userEmail);
+        userGroups = GlobalAppData.memberMap[userEmail];
+        userFullName = GlobalAppData.userMap[userEmail];
+        print(userFullName);
+        userInitials = userFullName.split(" ").length > 1
+            ? userFullName.split(" ")[0][0] + userFullName.split(" ")[1][0]
+            : userFullName[0];
+        userInitials = userInitials.toUpperCase();
+        print("groups: ");
+        print(userGroups);
+        // print("Inside setState $result $userEmail");
+        _widgetOptions = <Widget>[
+          Groups(userEmail, userGroups, userFullName),
+          Browse(userEmail, userGroups, userFullName),
+          Shelf(userEmail, userGroups, userFullName),
+        ];
+        setState(() {
+          isInitialized = true;
+        });
+      }
+    });
+
+    return (!isInitialized)
+        ? Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          )
         : Scaffold(
             floatingActionButton: FloatingActionButton(
               onPressed: () {
@@ -245,11 +255,13 @@ class HomePageState extends State<HomePage> {
     if (user == null || user.email == null) {
       Navigator.of(context).pushReplacement(
           MaterialPageRoute<void>(builder: (_) => SignInPage()));
+      return null;
     } else {
       print("User email is " + user.email);
+      return user.email;
     }
 
-    return user.email;
+//    return "rishi.bhargava@gmail.com";
   }
 
   void signOutGoogle() async {

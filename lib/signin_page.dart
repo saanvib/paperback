@@ -123,7 +123,7 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
       splashColor: Colors.grey,
       onPressed: () {
         signInWithGoogle().whenComplete(() {
-          if (isGoogleNewUser) {
+          if (isGoogleNewUser != null && isGoogleNewUser) {
             _pushReplacementPage(context, GoogleRegisterPage());
           } else {
             _pushReplacementPage(context, HomePage(0));
@@ -165,7 +165,6 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
       accessToken: googleSignInAuthentication.accessToken,
       idToken: googleSignInAuthentication.idToken,
     );
-
     final AuthResult authResult = await _auth.signInWithCredential(credential);
     final FirebaseUser user = authResult.user;
 
@@ -178,7 +177,7 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
     if (authResult.additionalUserInfo.isNewUser) {
       isGoogleNewUser = true;
     } else {
-      isGoogleNewUser = false;
+      print("isgooglenewuser true");
     }
 
     return 'signInWithGoogle succeeded: $user';

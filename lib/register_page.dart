@@ -178,26 +178,37 @@ class RegisterPageState extends State<RegisterPage> {
         .user;
     if (user != null) {
       setState(() {
-        _success = true;
         _userEmail = user.email;
         // TODO: check if the user exists and give error
         if (_groupCodeController.text != "") {
-          Firestore.instance.collection('users').add({
-            "full_name": _nameController.text,
-            "email": _emailController.text,
-            "group_code": [_groupCodeController.text],
-          });
           Firestore.instance
               .collection("groups")
               .where("group_code", isEqualTo: _groupCodeController.text)
               .getDocuments()
               .then((e) {
-            Firestore.instance
-                .collection('groups')
-                .document(e.documents[0].documentID)
-                .updateData({
-              "members": FieldValue.arrayUnion([_emailController.text])
-            });
+            if (e.documents.length == 0) {
+              //TODO: fix this
+              final snackBar = SnackBar(
+                content: Text('Wrong group code? Please check again.'),
+              );
+
+              // Find the Scaffold in the widget tree and use
+              // it to show a SnackBar.
+              Scaffold.of(context).showSnackBar(snackBar);
+              _success = false;
+              return;
+            } else
+              Firestore.instance
+                  .collection('groups')
+                  .document(e.documents[0].documentID)
+                  .updateData({
+                "members": FieldValue.arrayUnion([_emailController.text])
+              });
+          });
+          Firestore.instance.collection('users').add({
+            "full_name": _nameController.text,
+            "email": _emailController.text,
+            "group_code": [_groupCodeController.text],
           });
         } else {
           String newGroupId = "g_" + randomAlphaNumeric(6);
@@ -212,7 +223,7 @@ class RegisterPageState extends State<RegisterPage> {
             "group_name": _groupNameController.text,
           });
         }
-
+        _success = true;
         _auth.currentUser().then((val) {
           if (val != null) {
             _pushReplacementPage(context, HomePage(0));

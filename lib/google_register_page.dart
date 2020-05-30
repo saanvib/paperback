@@ -5,10 +5,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:paperback/home_page.dart';
 import 'package:paperback/signin_page.dart';
 import 'package:random_string/random_string.dart';
-
-import 'home_page.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -41,6 +40,7 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                Text("One time registration for google users"),
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: 'Full Name'),
@@ -126,7 +126,7 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
                   child: Text(_success == null
                       ? ''
                       : (_success
-                          ? 'Successfully registered ' + _userEmail
+                          ? 'Successfully registered '
                           : 'Registration failed')),
                 )
               ],
@@ -158,22 +158,33 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
         _success = true;
         // TODO: check if the user exists and give error
         if (_groupCodeController.text != "") {
-          Firestore.instance.collection('users').add({
-            "full_name": _nameController.text,
-            "email": value,
-            "group_code": [_groupCodeController.text],
-          });
           Firestore.instance
               .collection("groups")
               .where("group_code", isEqualTo: _groupCodeController.text)
               .getDocuments()
               .then((e) {
-            Firestore.instance
-                .collection('groups')
-                .document(e.documents[0].documentID)
-                .updateData({
-              "members": FieldValue.arrayUnion([value])
-            });
+            if (e.documents.length == 0) {
+              //TODO: fix this
+              final snackBar = SnackBar(
+                content: Text('Wrong group code? Please check again.'),
+              );
+              print("wrong group");
+              // Find the Scaffold in the widget tree and use
+              // it to show a SnackBar.
+              Scaffold.of(context).showSnackBar(snackBar);
+              return;
+            } else
+              Firestore.instance
+                  .collection('groups')
+                  .document(e.documents[0].documentID)
+                  .updateData({
+                "members": FieldValue.arrayUnion([value])
+              });
+          });
+          Firestore.instance.collection('users').add({
+            "full_name": _nameController.text,
+            "email": value,
+            "group_code": [_groupCodeController.text],
           });
         } else {
           String newGroupId = "g_" + randomAlphaNumeric(6);
@@ -188,6 +199,7 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
             "group_name": _groupNameController.text,
           });
         }
+
         _pushReplacementPage(context, HomePage(0));
       });
     });

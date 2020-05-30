@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:paperback/home_page.dart';
+
+import 'landing_page.dart';
 
 void main() => runApp(MyApp());
 
@@ -13,7 +14,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
       ),
-      home: HomePage(0),
+      home: LandingPage(),
     );
   }
 }

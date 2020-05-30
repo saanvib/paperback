@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:paperback/borrowed_books_tile.dart';
 import 'package:paperback/browse_books_tile.dart';
+import 'package:paperback/global_app_data.dart';
+import 'package:paperback/home_page.dart';
+import 'package:random_string/random_string.dart';
 
 import 'my_books_tile.dart';
 
@@ -16,13 +19,14 @@ class Groups extends StatefulWidget {
 }
 
 class GroupsState extends State<Groups> {
-  static const TextStyle optionStyle = TextStyle(fontSize: 30);
+  static const TextStyle optionStyle = TextStyle(fontSize: 20);
   String _selectedGroup;
   List<String> members;
   String userEmail;
   List<String> userGroups;
   List<String> userGroupNames;
   String userFullName;
+  final TextEditingController _titleController = TextEditingController();
   List<DropdownMenuItem<String>> groupDropDown;
   @override
   GroupsState(this.userEmail, this.userGroups, this.userFullName);
@@ -31,6 +35,7 @@ class GroupsState extends State<Groups> {
   void initState() {
     loadGroupList();
     super.initState();
+    _selectedGroup = userGroups[0].toString();
   }
 
   @override
@@ -38,6 +43,25 @@ class GroupsState extends State<Groups> {
     return Column(
       children: <Widget>[
         SizedBox(height: 20),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 30),
+          child: Text(
+            "Welcome Book Worm to your own private library. Create your own group or join an existing one.\  "
+            "And then voila borrow and lend books among your friends. Its that simple.",
+            style: TextStyle(fontSize: 15),
+          ),
+        ),
+        FlatButton(
+          color: Colors.purpleAccent,
+          child: Text("Create Group"),
+          onPressed: () {
+            _createNewGroupDialog();
+          },
+        ),
+        Divider(),
+        SizedBox(
+          height: 30,
+        ),
         Text(
           "My Groups",
           style: optionStyle,
@@ -46,7 +70,7 @@ class GroupsState extends State<Groups> {
             ? DropdownButton<String>(
                 hint: new Text('Select A Group'),
                 items: groupDropDown,
-                value: userGroups[0].toString(),
+                value: _selectedGroup,
                 onChanged: (value) {
                   Firestore.instance
                       .collection("groups")
@@ -67,7 +91,7 @@ class GroupsState extends State<Groups> {
         Center(
             child: Text(
                 "Invite your friends with the following code: $_selectedGroup")),
-        SizedBox(height: 10),
+        SizedBox(height: 30),
         Text(
           "Members",
           style: TextStyle(fontSize: 25),
@@ -82,8 +106,69 @@ class GroupsState extends State<Groups> {
                 itemBuilder: (context, index) =>
                     _buildGroupListItem(index, context, members[index]),
               )
-            : Text("Please select a group.")
+            : Text("Please select a group above.")
       ],
+    );
+  }
+
+  void _createNewGroupDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text("Create a Group"),
+          content: Column(
+            children: [
+              Text("This will create a new group."),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Group Name'),
+                validator: (String value) {
+                  if (value.isEmpty) {
+                    return 'Enter a group name.';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("Add"),
+              onPressed: () {
+                String newGroupId = "g_" + randomAlphaNumeric(6);
+
+                Firestore.instance.collection("groups").add({
+                  "group_code": newGroupId,
+                  "members": [userEmail],
+                  "group_name": _titleController.text,
+                });
+                Firestore.instance
+                    .collection("users")
+                    .where("email", isEqualTo: userEmail)
+                    .getDocuments()
+                    .then((value) {
+                  Firestore.instance
+                      .collection('users')
+                      .document(value.documents[0].documentID)
+                      .updateData({
+                    "group_code": FieldValue.arrayUnion([newGroupId])
+                  });
+                  HomePageState.resetInit();
+                  GlobalAppData().resetState();
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+            new FlatButton(
+              child: new Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -119,7 +204,13 @@ class GroupsState extends State<Groups> {
 
   static Widget _buildGroupListItem(
       int index, BuildContext context, String member) {
-    return Text(member);
+    return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.0),
+        child: ListTile(
+          leading: Icon(Icons.person),
+          title: Text(GlobalAppData.userMap[member]),
+          subtitle: Text(member),
+        ));
   }
 }
 

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
+import 'package:paperback/global_app_data.dart';
 
 import 'home_page.dart';
 import 'model/model_book.dart';
@@ -22,6 +23,13 @@ class AddBookPageState extends State<AddBookPage> {
   final TextEditingController _authorController = TextEditingController();
   String _selectedGroup;
   bool _success;
+
+  @override
+  void initState() {
+    _selectedGroup = widget.userGroups[0].toString();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +68,7 @@ class AddBookPageState extends State<AddBookPage> {
                     ? DropdownButton<String>(
                         hint: new Text('Select Group'),
                         items: loadGroupList(),
-                        value: widget.userGroups[0].toString(),
+                        value: _selectedGroup,
                         onChanged: (value) {
                           setState(() {
                             _selectedGroup = value;
@@ -107,7 +115,7 @@ class AddBookPageState extends State<AddBookPage> {
     List<DropdownMenuItem<String>> groupList = [];
     for (var i = 0; i < widget.userGroups.length; i++) {
       groupList.add(new DropdownMenuItem(
-        child: new Text(widget.userGroups[i]),
+        child: new Text(GlobalAppData.groupMap[widget.userGroups[i]]),
         value: widget.userGroups[i].toString(),
       ));
     }
