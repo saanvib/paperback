@@ -27,6 +27,7 @@ class GroupsState extends State<Groups> {
   List<String> userGroupNames;
   String userFullName;
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _groupCodeController = TextEditingController();
   List<DropdownMenuItem<String>> groupDropDown;
   @override
   GroupsState(this.userEmail, this.userGroups, this.userFullName);
@@ -36,13 +37,22 @@ class GroupsState extends State<Groups> {
     loadGroupList();
     super.initState();
     _selectedGroup = userGroups[0].toString();
+    Firestore.instance
+        .collection("groups")
+        .where("group_code", isEqualTo: _selectedGroup)
+        .getDocuments()
+        .then((res) => {
+              setState(() {
+                members = List.from(res.documents[0].data["members"]);
+              })
+            });
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        SizedBox(height: 20),
+        SizedBox(height: 40),
         Container(
           padding: EdgeInsets.symmetric(horizontal: 30),
           child: Text(
@@ -52,17 +62,38 @@ class GroupsState extends State<Groups> {
           ),
         ),
         SizedBox(
-          height: 10,
+          height: 30,
         ),
-        FlatButton(
-          color: Colors.purple,
-          child: Text(
-            "Create Group",
-            style: TextStyle(color: Colors.white),
-          ),
-          onPressed: () {
-            _createNewGroupDialog();
-          },
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FlatButton(
+              color: Colors.purple,
+              child: Text(
+                "Create Group",
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                _createNewGroupDialog();
+              },
+            ),
+            SizedBox(
+              width: 30,
+            ),
+            FlatButton(
+              color: Colors.purple,
+              child: Text(
+                "Join a Group",
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                _addNewGroupDialog();
+              },
+            ),
+          ],
+        ),
+        SizedBox(
+          height: 20,
         ),
         Divider(),
         SizedBox(
@@ -114,6 +145,78 @@ class GroupsState extends State<Groups> {
               )
             : Text("Please select a group above.")
       ],
+    );
+  }
+
+  void _addNewGroupDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text("Join a Group"),
+          content: Container(
+            height: 100,
+            child: Column(
+              children: [
+                Text("This will add you to an existing group."),
+                TextFormField(
+                  controller: _groupCodeController,
+                  decoration: const InputDecoration(labelText: 'Group Code'),
+                  validator: (String value) {
+                    if (value.isEmpty) {
+                      return 'Please enter the group code';
+                    }
+                    return null;
+                    // TODO: what if they enter an invalid group code?!?
+                  },
+                )
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("Add"),
+              onPressed: () async {
+                String newGroupId = _groupCodeController.text;
+                Firestore.instance
+                    .collection("users")
+                    .where("email", isEqualTo: userEmail)
+                    .getDocuments()
+                    .then((value) {
+                  Firestore.instance
+                      .collection('users')
+                      .document(value.documents[0].documentID)
+                      .updateData({
+                    "group_code": FieldValue.arrayUnion([newGroupId])
+                  });
+                });
+                Firestore.instance
+                    .collection("groups")
+                    .where("group_code", isEqualTo: newGroupId)
+                    .getDocuments()
+                    .then((v) {
+                  Firestore.instance
+                      .collection("groups")
+                      .document(v.documents[0].documentID)
+                      .updateData({
+                    "members": FieldValue.arrayUnion([userEmail])
+                  });
+                  setState(() {
+                    HomePageState.resetInit();
+                  });
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+            new FlatButton(
+              child: new Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

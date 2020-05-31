@@ -69,11 +69,6 @@ class GlobalAppData {
         .getDocuments();
 
     // if the user does not exist in database - take them to registration
-    //TODO : not needed here. move this somewhere else.
-    if (groupDocs.documents.length == 0) {
-      print("No user found");
-      return false;
-    }
     List<String> memberList = new List<String>();
     for (DocumentSnapshot doc in groupDocs.documents) {
       groupMap[doc["group_code"]] = doc["group_name"];

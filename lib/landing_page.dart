@@ -14,8 +14,10 @@ class LandingPage extends StatelessWidget {
           FirebaseUser user = snapshot.data;
           if (user == null) {
             return SignInPage();
-          } else
+          } else {
+            // TODO: take to register if the user email is not in table.
             return HomePage(0);
+          }
         } else {
           return Scaffold(
             body: Center(

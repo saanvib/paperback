@@ -107,7 +107,7 @@ class RegisterPageState extends State<RegisterPage> {
                             const InputDecoration(labelText: 'Group Code'),
                         validator: (String value) {
                           if (value.isEmpty) {
-                            return 'Please enter your group code';
+                            return 'Please enter the group code';
                           }
                           return null;
                         },
