@@ -25,7 +25,7 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
   bool _success;
   bool isNewGroup;
   String groupValue;
-  String _userEmail;
+  String errorMessage;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,7 +115,12 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
                   child: RaisedButton(
                     onPressed: () async {
                       if (_formKey.currentState.validate()) {
-                        _register(context);
+                        _register(context).then((value) {
+                          if (value) _pushReplacementPage(context, HomePage(0));
+                          setState(() {
+                            _success = value;
+                          });
+                        });
                       }
                     },
                     child: const Text('Submit'),
@@ -127,7 +132,7 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
                       ? ''
                       : (_success
                           ? 'Successfully registered '
-                          : 'Registration failed')),
+                          : 'Registration failed: $errorMessage')),
                 )
               ],
             ),
@@ -152,57 +157,56 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
   }
 
   // Example code for registration.
-  void _register(BuildContext context) async {
-    getCurrentUser().then((value) {
-      setState(() {
-        _success = true;
-        // TODO: check if the user exists and give error
-        if (_groupCodeController.text != "") {
-          Firestore.instance
-              .collection("groups")
-              .where("group_code", isEqualTo: _groupCodeController.text)
-              .getDocuments()
-              .then((e) {
-            if (e.documents.length == 0) {
-              //TODO: fix this
-              final snackBar = SnackBar(
-                content: Text('Wrong group code? Please check again.'),
-              );
-              print("wrong group");
-              // Find the Scaffold in the widget tree and use
-              // it to show a SnackBar.
-              Scaffold.of(context).showSnackBar(snackBar);
-              return;
-            } else
-              Firestore.instance
-                  .collection('groups')
-                  .document(e.documents[0].documentID)
-                  .updateData({
-                "members": FieldValue.arrayUnion([value])
-              });
-          });
-          Firestore.instance.collection('users').add({
-            "full_name": _nameController.text,
-            "email": value,
-            "group_code": [_groupCodeController.text],
-          });
-        } else {
-          String newGroupId = "g_" + randomAlphaNumeric(6);
-          Firestore.instance.collection('users').add({
-            "full_name": _nameController.text,
-            "email": value,
-            "group_code": [newGroupId],
-          });
-          Firestore.instance.collection("groups").add({
-            "group_code": newGroupId,
-            "members": [value],
-            "group_name": _groupNameController.text,
-          });
-        }
+  Future<bool> _register(BuildContext context) async {
+    String email = await getCurrentUser();
 
-        _pushReplacementPage(context, HomePage(0));
+    if (_groupCodeController.text != "") {
+      QuerySnapshot e = await Firestore.instance
+          .collection("groups")
+          .where("group_code", isEqualTo: _groupCodeController.text)
+          .getDocuments();
+
+      if (e.documents.isNotEmpty) {
+        Firestore.instance
+            .collection('groups')
+            .document(e.documents[0].documentID)
+            .updateData({
+          "members": FieldValue.arrayUnion([email])
+        });
+        Firestore.instance.collection('users').add({
+          "full_name": _nameController.text,
+          "email": email,
+          "group_code": [_groupCodeController.text],
+        });
+        _success = true;
+        return _success;
+      } else {
+        final snackBar = SnackBar(
+          content: Text('Wrong group code? Please check again.'),
+        );
+        print("wrong group");
+        // Find the Scaffold in the widget tree and use
+        // it to show a SnackBar.
+        Scaffold.of(context).showSnackBar(snackBar);
+        errorMessage = "Group not found. Wrong group code?";
+        _success = false;
+        return false;
+      }
+    } else {
+      String newGroupId = "g_" + randomAlphaNumeric(6);
+      Firestore.instance.collection('users').add({
+        "full_name": _nameController.text,
+        "email": email,
+        "group_code": [newGroupId],
       });
-    });
+      Firestore.instance.collection("groups").add({
+        "group_code": newGroupId,
+        "members": [email],
+        "group_name": _groupNameController.text,
+      });
+      _success = true;
+      return _success;
+    }
   }
 
   getCurrentUser() async {

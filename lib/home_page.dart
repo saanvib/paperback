@@ -61,9 +61,7 @@ class HomePageState extends State<HomePage> {
         ? userFullName.split(" ")[0][0] + userFullName.split(" ")[1][0]
         : userFullName[0];
     userInitials = userInitials.toUpperCase();
-    // print("groups: ");
-    // print(userGroups);
-    // print("Inside setState $result $userEmail");
+
     _widgetOptions = <Widget>[
       Groups(userEmail, userGroups, userFullName),
       Browse(userEmail, userGroups, userFullName),

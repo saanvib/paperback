@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:paperback/password_field.dart';
-import 'package:paperback/signin_page.dart';
 import 'package:random_string/random_string.dart';
 
 import 'home_page.dart';
@@ -30,6 +29,7 @@ class RegisterPageState extends State<RegisterPage> {
   String groupValue;
   bool _success;
   String _userEmail;
+  String errorMessage = "Unknown Error.";
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,7 +131,12 @@ class RegisterPageState extends State<RegisterPage> {
                   child: RaisedButton(
                     onPressed: () async {
                       if (_formKey.currentState.validate()) {
-                        _register(context);
+                        _register(context).then((value) {
+                          if (value) _pushReplacementPage(context, HomePage(0));
+                          setState(() {
+                            _success = value;
+                          });
+                        });
                       }
                     },
                     child: const Text('Submit'),
@@ -143,7 +148,7 @@ class RegisterPageState extends State<RegisterPage> {
                       ? ''
                       : (_success
                           ? 'Successfully registered ' + _userEmail
-                          : 'Registration failed')),
+                          : 'Registration failed: $errorMessage')),
                 )
               ],
             ),
@@ -170,70 +175,86 @@ class RegisterPageState extends State<RegisterPage> {
   }
 
   // Example code for registration.
-  void _register(BuildContext context) async {
-    final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(
-      email: _emailController.text,
-      password: _passwordController.text,
-    ))
-        .user;
-    if (user != null) {
-      setState(() {
-        _userEmail = user.email;
-        // TODO: check if the user exists and give error
-        if (_groupCodeController.text != "") {
-          Firestore.instance
-              .collection("groups")
-              .where("group_code", isEqualTo: _groupCodeController.text)
-              .getDocuments()
-              .then((e) {
-            if (e.documents.length == 0) {
-              //TODO: fix this
-              final snackBar = SnackBar(
-                content: Text('Wrong group code? Please check again.'),
-              );
+  Future<bool> _register(BuildContext context) async {
+    FirebaseUser user;
 
-              // Find the Scaffold in the widget tree and use
-              // it to show a SnackBar.
-              Scaffold.of(context).showSnackBar(snackBar);
-              _success = false;
-              return;
-            } else
-              Firestore.instance
-                  .collection('groups')
-                  .document(e.documents[0].documentID)
-                  .updateData({
-                "members": FieldValue.arrayUnion([_emailController.text])
-              });
+    try {
+      user = (await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      ))
+          .user;
+    } catch (error) {
+      _success = false;
+      switch (error.code) {
+        case "ERROR_INVALID_EMAIL":
+          errorMessage = "Your email address appears to be malformed.";
+          break;
+        case "ERROR_EMAIL_ALREADY_IN_USE":
+          errorMessage =
+              "Email already in use, try reset password or login with google.";
+          break;
+        case "ERROR_WEAK_PASSWORD":
+          errorMessage = "System requires a stronger password.";
+          break;
+        case "ERROR_TOO_MANY_REQUESTS":
+          errorMessage = "Too many requests. Try again later.";
+          break;
+        case "ERROR_OPERATION_NOT_ALLOWED":
+          errorMessage = "Signing in with Email and Password is not enabled.";
+          break;
+        default:
+          errorMessage = "An undefined Error happened.";
+      }
+      return _success;
+    }
+    if (user != null) {
+      _userEmail = user.email;
+      if (_groupCodeController.text != "") {
+        QuerySnapshot e = await Firestore.instance
+            .collection("groups")
+            .where("group_code", isEqualTo: _groupCodeController.text)
+            .getDocuments();
+
+        if (e.documents.isNotEmpty) {
+          Firestore.instance
+              .collection('groups')
+              .document(e.documents[0].documentID)
+              .updateData({
+            "members": FieldValue.arrayUnion([_emailController.text])
           });
           Firestore.instance.collection('users').add({
             "full_name": _nameController.text,
             "email": _emailController.text,
             "group_code": [_groupCodeController.text],
           });
+          _success = true;
+          return _success;
         } else {
-          String newGroupId = "g_" + randomAlphaNumeric(6);
-          Firestore.instance.collection('users').add({
-            "full_name": _nameController.text,
-            "email": _emailController.text,
-            "group_code": [newGroupId],
-          });
-          Firestore.instance.collection("groups").add({
-            "group_code": newGroupId,
-            "members": [_emailController.text],
-            "group_name": _groupNameController.text,
-          });
+          errorMessage = "Cannot find the group. Check group code again.";
+          _success = false;
+          print("no group found. ");
+          await user.delete();
+          return _success;
         }
-        _success = true;
-        _auth.currentUser().then((val) {
-          if (val != null) {
-            _pushReplacementPage(context, HomePage(0));
-          } else {
-            _pushReplacementPage(context, SignInPage());
-          }
+      } else {
+        String newGroupId = "g_" + randomAlphaNumeric(6);
+        await Firestore.instance.collection('users').add({
+          "full_name": _nameController.text,
+          "email": _emailController.text,
+          "group_code": [newGroupId],
         });
-      });
+        await Firestore.instance.collection("groups").add({
+          "group_code": newGroupId,
+          "members": [_emailController.text],
+          "group_name": _groupNameController.text,
+        });
+        _success = true;
+        return _success;
+      }
     } else {
       _success = false;
+      return _success;
     }
   }
 }

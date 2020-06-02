@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -92,6 +93,7 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
   bool isGoogleNewUser;
   bool _success;
   String _userID;
+  String errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +112,7 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
                 ? ''
                 : (_success
                     ? 'Successfully signed in, uid: ' + _userID
-                    : 'Sign in failed'),
+                    : 'Sign in failed: $errorMessage'),
             style: TextStyle(color: Colors.red),
           ),
         )
@@ -122,11 +124,17 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
     return OutlineButton(
       splashColor: Colors.grey,
       onPressed: () {
-        signInWithGoogle().whenComplete(() {
-          if (isGoogleNewUser != null && isGoogleNewUser) {
-            _pushReplacementPage(context, GoogleRegisterPage());
+        signInWithGoogle().then((value) {
+          if (value) {
+            if (isGoogleNewUser != null && isGoogleNewUser) {
+              _pushReplacementPage(context, GoogleRegisterPage());
+            } else {
+              _pushReplacementPage(context, HomePage(0));
+            }
           } else {
-            _pushReplacementPage(context, HomePage(0));
+            setState(() {
+              _success = value;
+            });
           }
         });
       },
@@ -156,31 +164,56 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
     );
   }
 
-  Future<String> signInWithGoogle() async {
-    final GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
-    final GoogleSignInAuthentication googleSignInAuthentication =
-        await googleSignInAccount.authentication;
+  Future<bool> signInWithGoogle() async {
+    //TODO: handle the exception for sign_in_failed
 
-    final AuthCredential credential = GoogleAuthProvider.getCredential(
-      accessToken: googleSignInAuthentication.accessToken,
-      idToken: googleSignInAuthentication.idToken,
-    );
-    final AuthResult authResult = await _auth.signInWithCredential(credential);
-    final FirebaseUser user = authResult.user;
+    try {
+      final GoogleSignInAccount googleSignInAccount =
+          await googleSignIn.signIn();
+      final GoogleSignInAuthentication googleSignInAuthentication =
+          await googleSignInAccount.authentication;
 
-    assert(!user.isAnonymous);
-    assert(await user.getIdToken() != null);
+      final AuthCredential credential = GoogleAuthProvider.getCredential(
+        accessToken: googleSignInAuthentication.accessToken,
+        idToken: googleSignInAuthentication.idToken,
+      );
+      final AuthResult authResult =
+          await _auth.signInWithCredential(credential);
+      final FirebaseUser user = authResult.user;
 
-    final FirebaseUser currentUser = await _auth.currentUser();
-    assert(user.uid == currentUser.uid);
+      assert(!user.isAnonymous);
+      assert(await user.getIdToken() != null);
 
-    if (authResult.additionalUserInfo.isNewUser) {
-      isGoogleNewUser = true;
-    } else {
-      isGoogleNewUser = false;
+      final FirebaseUser currentUser = await _auth.currentUser();
+      assert(user.uid == currentUser.uid);
+
+      QuerySnapshot q = await Firestore.instance
+          .collection("users")
+          .where("email", isEqualTo: currentUser.email)
+          .getDocuments();
+
+      if (authResult.additionalUserInfo.isNewUser || q.documents.isEmpty) {
+        isGoogleNewUser = true;
+      } else {
+        isGoogleNewUser = false;
+      }
+
+      print('signInWithGoogle succeeded: $user');
+      _success = true;
+      return true;
+    } catch (error) {
+      switch (error.code) {
+        case "SIGN_IN_FAILED":
+          errorMessage = "An unexpected error occurred while signing.";
+          break;
+        default:
+          errorMessage = "An unexpected error occurred while signing.";
+          break;
+      }
+      print("Sign in failed: error");
+      _success = false;
+      return false;
     }
-
-    return 'signInWithGoogle succeeded: $user';
   }
 }
 
@@ -216,6 +249,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
   final TextEditingController _passwordController = TextEditingController();
   bool _success;
   String _userEmail;
+  String errorMessage;
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -261,7 +295,9 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                   ? ''
                   : (_success
                       ? 'Successfully signed in ' + _userEmail
-                      : 'Sign in failed'),
+                      : errorMessage != null
+                          ? 'Sign in failed: $errorMessage'
+                          : 'Sign in failed'),
               style: TextStyle(color: Colors.red),
             ),
           )
@@ -287,9 +323,36 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
       ))
           .user;
     } catch (error) {
+      switch (error.code) {
+        case "ERROR_INVALID_EMAIL":
+          errorMessage = "Your email address appears to be malformed.";
+          break;
+        case "ERROR_WRONG_PASSWORD":
+          errorMessage = "Your password is wrong.";
+          break;
+        case "ERROR_USER_NOT_FOUND":
+          errorMessage = "User with this email doesn't exist.";
+          break;
+        case "ERROR_USER_DISABLED":
+          errorMessage = "User with this email has been disabled.";
+          break;
+        case "ERROR_TOO_MANY_REQUESTS":
+          errorMessage = "Too many requests. Try again later.";
+          break;
+        case "ERROR_OPERATION_NOT_ALLOWED":
+          errorMessage = "Signing in with Email and Password is not enabled.";
+          break;
+        default:
+          errorMessage = "An undefined Error happened.";
+      }
+      print("Error Message: $errorMessage");
+
       setState(() {
         _success = false;
-        return "Sign in Failed";
+
+        return errorMessage != null
+            ? "Sign in Failed: $errorMessage"
+            : "Sign in Failed";
       });
     }
 

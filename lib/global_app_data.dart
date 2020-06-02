@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:random_string/random_string.dart';
 
 class GlobalAppData {
   static Map<String, String> userMap = new Map(); //{"email":"Full name"}
@@ -60,6 +61,26 @@ class GlobalAppData {
       print("getCurrentUser: Email is null");
       return false;
     }
+
+    QuerySnapshot q = await Firestore.instance
+        .collection("users")
+        .where("email", isEqualTo: user.email)
+        .getDocuments();
+
+    if (q.documents.isEmpty) {
+      String newGroupId = "g_" + randomAlphaNumeric(6);
+      await Firestore.instance.collection('users').add({
+        "full_name": user.displayName,
+        "email": user.email,
+        "group_code": [newGroupId],
+      });
+      await Firestore.instance.collection("groups").add({
+        "group_code": newGroupId,
+        "members": [user.email],
+        "group_name": "Default Group",
+      });
+    }
+
     userEmail = user.email;
     print("usermail - $userEmail");
 
