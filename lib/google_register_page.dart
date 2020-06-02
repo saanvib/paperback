@@ -181,13 +181,8 @@ class GoogleRegisterPageState extends State<GoogleRegisterPage> {
         _success = true;
         return _success;
       } else {
-        final snackBar = SnackBar(
-          content: Text('Wrong group code? Please check again.'),
-        );
         print("wrong group");
-        // Find the Scaffold in the widget tree and use
-        // it to show a SnackBar.
-        Scaffold.of(context).showSnackBar(snackBar);
+
         errorMessage = "Group not found. Wrong group code?";
         _success = false;
         return false;

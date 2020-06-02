@@ -31,6 +31,7 @@ class GroupsState extends State<Groups> {
   List<DropdownMenuItem<String>> groupDropDown;
   @override
   GroupsState(this.userEmail, this.userGroups, this.userFullName);
+  bool _success;
 
   @override
   void initState() {
@@ -152,70 +153,91 @@ class GroupsState extends State<Groups> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: new Text("Join a Group"),
-          content: Container(
-            height: 100,
-            child: Column(
-              children: [
-                Text("This will add you to an existing group."),
-                TextFormField(
-                  controller: _groupCodeController,
-                  decoration: const InputDecoration(labelText: 'Group Code'),
-                  validator: (String value) {
-                    if (value.isEmpty) {
-                      return 'Please enter the group code';
-                    }
-                    return null;
-                    // TODO: what if they enter an invalid group code?!?
-                  },
-                )
-              ],
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: new Text("Join a Group"),
+            content: Container(
+              height: 150,
+              child: Column(
+                children: [
+                  Text("This will add you to an existing group."),
+                  TextFormField(
+                    controller: _groupCodeController,
+                    decoration: const InputDecoration(labelText: 'Group Code'),
+                    validator: (String value) {
+                      if (value.isEmpty) {
+                        return 'Please enter the group code';
+                      }
+                      return null;
+                    },
+                  ),
+                  Container(
+                    alignment: Alignment.center,
+                    child: Text(_success == null
+                        ? ''
+                        : (_success
+                            ? 'Successfully added group'
+                            : 'Failed to add group. Wrong group code?')),
+                  )
+                ],
+              ),
             ),
-          ),
-          actions: <Widget>[
-            new FlatButton(
-              child: new Text("Add"),
-              onPressed: () async {
-                String newGroupId = _groupCodeController.text;
-                Firestore.instance
-                    .collection("users")
-                    .where("email", isEqualTo: userEmail)
-                    .getDocuments()
-                    .then((value) {
-                  Firestore.instance
-                      .collection('users')
-                      .document(value.documents[0].documentID)
-                      .updateData({
-                    "group_code": FieldValue.arrayUnion([newGroupId])
-                  });
-                });
-                Firestore.instance
-                    .collection("groups")
-                    .where("group_code", isEqualTo: newGroupId)
-                    .getDocuments()
-                    .then((v) {
-                  Firestore.instance
+            actions: <Widget>[
+              new FlatButton(
+                child: new Text("Add"),
+                onPressed: () async {
+                  String newGroupId = _groupCodeController.text;
+
+                  QuerySnapshot e = await Firestore.instance
                       .collection("groups")
-                      .document(v.documents[0].documentID)
-                      .updateData({
-                    "members": FieldValue.arrayUnion([userEmail])
-                  });
-                  setState(() {
-                    HomePageState.resetInit();
-                  });
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-            new FlatButton(
-              child: new Text("Close"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
+                      .where("group_code", isEqualTo: newGroupId)
+                      .getDocuments();
+
+                  if (e.documents.isEmpty) {
+                    setState(() {
+                      _success = false;
+                    });
+                  } else {
+                    Firestore.instance
+                        .collection("users")
+                        .where("email", isEqualTo: userEmail)
+                        .getDocuments()
+                        .then((value) {
+                      Firestore.instance
+                          .collection('users')
+                          .document(value.documents[0].documentID)
+                          .updateData({
+                        "group_code": FieldValue.arrayUnion([newGroupId])
+                      });
+                    });
+                    Firestore.instance
+                        .collection("groups")
+                        .where("group_code", isEqualTo: newGroupId)
+                        .getDocuments()
+                        .then((v) {
+                      Firestore.instance
+                          .collection("groups")
+                          .document(v.documents[0].documentID)
+                          .updateData({
+                        "members": FieldValue.arrayUnion([userEmail])
+                      });
+                      setState(() {
+                        HomePageState.resetInit();
+                      });
+                    });
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+              new FlatButton(
+                child: new Text("Close"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });
       },
     );
   }
@@ -227,7 +249,7 @@ class GroupsState extends State<Groups> {
         return AlertDialog(
           title: new Text("Create a Group"),
           content: Container(
-            height: 100,
+            height: 130,
             child: Column(
               children: [
                 Text("This will create a new group."),
