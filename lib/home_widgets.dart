@@ -404,15 +404,31 @@ class ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
                       case ConnectionState.waiting:
                         return new Text('Loading...');
                       default:
-                        return new ListView.builder(
-                          padding: const EdgeInsets.all(10),
-                          scrollDirection: Axis.vertical,
-                          physics: NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: snapshot.data.documents.length,
-                          itemBuilder: (context, index) => _buildListItem(
-                              index, context, snapshot.data.documents[index]),
-                        );
+                        return snapshot.data.documents.isEmpty
+                            ? Column(
+                                children: [
+                                  SizedBox(
+                                    height: 30,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20),
+                                    child: Text(
+                                        "You have not added any books to your shelf. Use the + button below to add books. "),
+                                  ),
+                                ],
+                              )
+                            : new ListView.builder(
+                                padding: const EdgeInsets.all(10),
+                                scrollDirection: Axis.vertical,
+                                physics: NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                itemCount: snapshot.data.documents.length,
+                                itemBuilder: (context, index) => _buildListItem(
+                                    index,
+                                    context,
+                                    snapshot.data.documents[index]),
+                              );
                     }
                   })
               : StreamBuilder(
@@ -429,16 +445,30 @@ class ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
                       case ConnectionState.waiting:
                         return new Text('Loading...');
                       default:
-                        return new ListView.builder(
-                          padding: const EdgeInsets.all(10),
-                          scrollDirection: Axis.vertical,
-                          physics: NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: snapshot.data.documents.length,
-                          itemBuilder: (context, index) =>
-                              _buildBorrowedListItem(index, context,
-                                  snapshot.data.documents[index]),
-                        );
+                        return snapshot.data.documents.isEmpty
+                            ? Column(
+                                children: [
+                                  SizedBox(
+                                    height: 30,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20),
+                                    child: Text(
+                                        "You have not borrowed any books. You can borrow books from friends in your group by using the browse tab."),
+                                  ),
+                                ],
+                              )
+                            : new ListView.builder(
+                                padding: const EdgeInsets.all(10),
+                                scrollDirection: Axis.vertical,
+                                physics: NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                itemCount: snapshot.data.documents.length,
+                                itemBuilder: (context, index) =>
+                                    _buildBorrowedListItem(index, context,
+                                        snapshot.data.documents[index]),
+                              );
                     }
                   }),
           SizedBox(
@@ -497,15 +527,39 @@ class BrowseState extends State<Browse> {
                   case ConnectionState.waiting:
                     return new Text('Loading...');
                   default:
-                    return new ListView.builder(
-                      padding: const EdgeInsets.all(10),
-                      scrollDirection: Axis.vertical,
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: snapshot.data.documents.length,
-                      itemBuilder: (context, index) => _buildListItem(
-                          index, context, snapshot.data.documents[index]),
-                    );
+                    return snapshot.data.documents.isEmpty
+                        ? Column(
+                            children: [
+                              SizedBox(
+                                height: 30,
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: Text(
+                                    "There are no books to borrow in your group. Either all books are checked \ "
+                                    "out or there are no books added to your groups or you don't have any friends in your group. "),
+                              ),
+                              SizedBox(
+                                height: 15,
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: Text(
+                                    "Invite your friends to your group or join another group from home page. "),
+                              ),
+                            ],
+                          )
+                        : new ListView.builder(
+                            padding: const EdgeInsets.all(10),
+                            scrollDirection: Axis.vertical,
+                            physics: NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: snapshot.data.documents.length,
+                            itemBuilder: (context, index) => _buildListItem(
+                                index, context, snapshot.data.documents[index]),
+                          );
                 }
               }),
         ],

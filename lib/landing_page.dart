@@ -1,8 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:paperback/signin_page.dart';
-import 'package:random_string/random_string.dart';
 
 import 'home_page.dart';
 

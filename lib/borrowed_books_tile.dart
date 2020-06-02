@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:paperback/global_app_data.dart';
 
 import 'model/model_book.dart';
 
@@ -69,7 +70,7 @@ class BorrowedBooksTileState extends State<BorrowedBooksTile>
                 Container(
                     padding: EdgeInsets.all(15),
                     child: Text("The owner of this book is " +
-                        widget.doc["owner_email"])),
+                        GlobalAppData.userMap[widget.doc["owner_email"]])),
                 Container(
                     padding: EdgeInsets.all(15),
                     child: widget.doc["status"] == "checked_out"
@@ -80,10 +81,16 @@ class BorrowedBooksTileState extends State<BorrowedBooksTile>
                             child: Text("Return"),
                           )
                         : widget.doc["status"] == "return_requested"
-                            ? Text("Your return is being processed.")
+                            ? Text("Your return is being processed. Contact " +
+                                GlobalAppData
+                                    .userMap[widget.doc["owner_email"]] +
+                                " to return the book.")
                             : (widget.doc["status"] == "checkout_requested")
                                 ? Text(
-                                    "Your checkout request is being processed.")
+                                    "Your checkout request is being processed. Contact " +
+                                        GlobalAppData.userMap[
+                                            widget.doc["owner_email"]] +
+                                        " to pick up the book.")
                                 : Container()),
                 Divider(height: 0, thickness: 0.5),
                 Container(

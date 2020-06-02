@@ -87,7 +87,12 @@ class BrowseBooksTileState extends State<BrowseBooksTile>
                                       (widget.doc["owner_email"] !=
                                           widget.userEmail))
                                   ? Text(
-                                      "Your checkout request is being processed.")
+                                      "Your checkout request is being processed. Contact " +
+                                          GlobalAppData.userMap[
+                                              widget.doc["owner_email"]] +
+                                          "<" +
+                                          widget.doc["owner_email"] +
+                                          "> to pick up the book.")
                                   : Container()),
                       Divider(height: 0, thickness: 0.5),
                       Container(

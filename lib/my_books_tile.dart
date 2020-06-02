@@ -75,19 +75,21 @@ class MyBooksTileState extends State<MyBooksTile>
                     child: widget.doc["status"] == "checkout_requested"
                         ? Text(GlobalAppData
                                 .userMap[widget.doc["checked_out_to_email"]] +
-                            " would like to checkout this book")
+                            " would like to checkout this book. Contact " +
+                            GlobalAppData
+                                .userMap[widget.doc["checked_out_to_email"]] +
+                            " to share the book.")
                         : widget.doc["status"] == "return_requested"
                             ? Text(GlobalAppData.userMap[
                                     widget.doc["checked_out_to_email"]] +
-                                " would like to return this book")
+                                " would like to return this book. After you receive book, click \'Receive Book\' button.")
                             : widget.doc["status"] == "checked_out"
                                 ? Text(
                                     "This book is currently checked out to " +
                                         GlobalAppData.userMap[
                                             widget.doc["checked_out_to_email"]])
                                 : widget.doc["status"] == "not_checked_out"
-                                    ? Text(
-                                        "This book is currently sitting on your shelf!")
+                                    ? Text("This book is currently sitting on your shelf. Enjoy the book!")
                                     : Container()),
                 Container(
                     padding: EdgeInsets.all(15),
