@@ -75,6 +75,7 @@ class BorrowedBooksTileState extends State<BorrowedBooksTile>
                     padding: EdgeInsets.all(15),
                     child: widget.doc["status"] == "checked_out"
                         ? RaisedButton(
+                            color: Colors.purple,
                             onPressed: () {
                               Book.returnRequest(widget.doc["book_id"]);
                             },

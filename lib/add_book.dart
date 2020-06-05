@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
+
+import 'package:barcode_scan/platform_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:paperback/global_app_data.dart';
+import 'package:http/http.dart' as http;
 
 import 'home_page.dart';
 import 'model/model_book.dart';
@@ -44,6 +48,58 @@ class AddBookPageState extends State<AddBookPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  alignment: Alignment.center,
+                  child: RaisedButton(
+                    onPressed: () async {
+                      var result = await BarcodeScanner.scan();
+                      String isbn = result.rawContent;
+                      print(isbn); // The barcode content
+                      print(
+                          'https://openlibrary.org/api/books?bibkeys=ISBN:$isbn&format=json&jscmd=data');
+                      final response = await http.get(
+                          'https://openlibrary.org/api/books?bibkeys=ISBN:$isbn&format=json&jscmd=data');
+
+                      if (response.statusCode == 200) {
+                        var jsonResponse = json.decode(response.body);
+                        if (jsonResponse != null &&
+                            jsonResponse.toString() != "{}") {
+                          print(json.decode(response.body)["ISBN:$isbn"]
+                              ['title']);
+                          print(json.decode(response.body)["ISBN:$isbn"]
+                              ['authors'][0]["name"]);
+                          _titleController.text =
+                              json.decode(response.body)["ISBN:$isbn"]['title'];
+                          _authorController.text =
+                              json.decode(response.body)["ISBN:$isbn"]
+                                  ['authors'][0]["name"];
+                          setState(() {
+                            _success = true;
+                          });
+                        } else {
+                          print("json null");
+                          setState(() {
+                            _success = false;
+                          });
+                        }
+                      } else {
+                        print("status code :" + response.statusCode.toString());
+                        setState(() {
+                          _success = false;
+                        });
+                      }
+//                      Book.addBook(
+//                          json.decode(response.body)['title'],
+//                          json.decode(response.body)['authors'][0]["name"],
+//                          widget.userEmail,
+//                          _selectedGroup);
+                      //_pushReplacementPage(context, HomePage(2));
+                    },
+                    // TODO: check if book already exists in database?
+                    child: const Text('Scan Book'),
+                  ),
+                ),
                 TextFormField(
                   controller: _titleController,
                   decoration: const InputDecoration(labelText: 'Book Title'),
@@ -88,6 +144,9 @@ class AddBookPageState extends State<AddBookPage> {
                             _authorController.text,
                             widget.userEmail,
                             _selectedGroup);
+                        setState(() {
+                          _success = null;
+                        });
                         _pushReplacementPage(context, HomePage(2));
                       }
                     },
@@ -100,8 +159,8 @@ class AddBookPageState extends State<AddBookPage> {
                   child: Text(_success == null
                       ? ''
                       : (_success
-                          ? 'Successfully registered ' + widget.userEmail
-                          : 'Registration failed')),
+                          ? 'Scan successful. Review and hit submit.  '
+                          : 'Scan could not find the book. Please add manually.')),
                 )
               ],
             ),

@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
 import 'package:paperback/borrowed_books_tile.dart';
 import 'package:paperback/browse_books_tile.dart';
 import 'package:paperback/global_app_data.dart';
 import 'package:random_string/random_string.dart';
+import 'package:share/share.dart';
 
 import 'home_page.dart';
 import 'my_books_tile.dart';
@@ -126,9 +128,24 @@ class GroupsState extends State<Groups> {
               )
             : Text("Loading ..."),
         SizedBox(height: 20),
-        Center(
-            child: Text(
-                "Invite your friends with the following code: $_selectedGroup")),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("You group code is: $_selectedGroup: "),
+            FlatButton(
+              onPressed: () {
+                Share.share(
+                    'I would like to exchange books with you and this app (https://paperback.omniate.com) helps to keep track. \ '
+                    'Use group code $_selectedGroup at registration time to join my group. ',
+                    subject: 'Lets share books!');
+              },
+              child: Text(
+                "Invite friends",
+                style: TextStyle(color: Colors.purple),
+              ),
+            )
+          ],
+        ),
         SizedBox(height: 30),
         Text(
           "Members",

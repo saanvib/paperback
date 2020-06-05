@@ -118,6 +118,45 @@ class HomePageState extends State<HomePage> {
                         child: new Text(userInitials),
                       ),
                     ),
+//                    Container(
+//                      padding: EdgeInsets.symmetric(horizontal: 70),
+//                      child: RaisedButton(
+//                        color: Colors.purple,
+//                        child: Text(
+//                          "Reset Password",
+//                          style: TextStyle(color: Colors.white),
+//                        ),
+//                        onPressed: () async {
+//                          _auth.currentUser().then((value) {
+//                            List<UserInfo> providerData = value.providerData;
+//                            print(providerData.length);
+//                            for (UserInfo userInfo in providerData) {
+//                              switch (userInfo.providerId) {
+//                                case "Google":
+//                                  {
+//                                    print(
+//                                        "Google auth - ignoring password reset");
+//                                  }
+//                                  break;
+//
+//                                default:
+//                                  {
+//                                    _auth.sendPasswordResetEmail(
+//                                        email: value.email);
+//                                    print("Provider ... " + value.providerId);
+//                                    _auth.signOut();
+//                                    Navigator.of(context).pushReplacement(
+//                                        MaterialPageRoute<void>(
+//                                            builder: (_) => SignInPage()));
+//                                  }
+//                                  break;
+//                              }
+//                            }
+//                          });
+//                          Navigator.pop(context);
+//                        },
+//                      ),
+//                    ),
                     Divider(),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 70),
