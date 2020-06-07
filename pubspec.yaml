@@ -35,6 +35,7 @@ dependencies:
   barcode_scan:
   http:
   apple_sign_in:
+  flutter_signin_button: ^1.0.0
 
 dev_dependencies:
   flutter_test:

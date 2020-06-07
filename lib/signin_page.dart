@@ -2,6 +2,8 @@ import 'package:apple_sign_in/apple_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_signin_button/button_list.dart';
+import 'package:flutter_signin_button/button_view.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:paperback/home_page.dart';
 import 'package:paperback/password_field.dart';
@@ -105,7 +107,24 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
         Container(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           alignment: Alignment.center,
-          child: _signInButton(context),
+          child: SignInButton(
+            Buttons.Google,
+            onPressed: () {
+              signInWithGoogle().then((value) {
+                if (value) {
+                  if (isGoogleNewUser != null && isGoogleNewUser) {
+                    _pushReplacementPage(context, GoogleRegisterPage());
+                  } else {
+                    _pushReplacementPage(context, HomePage(0));
+                  }
+                } else {
+                  setState(() {
+                    _success = value;
+                  });
+                }
+              });
+            },
+          ),
         ),
         Container(
           alignment: Alignment.center,
@@ -123,49 +142,49 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
     );
   }
 
-  Widget _signInButton(BuildContext context) {
-    return OutlineButton(
-      splashColor: Colors.grey,
-      onPressed: () {
-        signInWithGoogle().then((value) {
-          if (value) {
-            if (isGoogleNewUser != null && isGoogleNewUser) {
-              _pushReplacementPage(context, GoogleRegisterPage());
-            } else {
-              _pushReplacementPage(context, HomePage(0));
-            }
-          } else {
-            setState(() {
-              _success = value;
-            });
-          }
-        });
-      },
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
-      highlightElevation: 0,
-      borderSide: BorderSide(color: Colors.grey),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Image(image: AssetImage("images/google-logo.jpg"), height: 35.0),
-            Padding(
-              padding: const EdgeInsets.only(left: 10),
-              child: Text(
-                'Sign in with Google',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.grey,
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
+//  Widget _signInButton(BuildContext context) {
+//    return OutlineButton(
+//      splashColor: Colors.grey,
+//      onPressed: () {
+//        signInWithGoogle().then((value) {
+//          if (value) {
+//            if (isGoogleNewUser != null && isGoogleNewUser) {
+//              _pushReplacementPage(context, GoogleRegisterPage());
+//            } else {
+//              _pushReplacementPage(context, HomePage(0));
+//            }
+//          } else {
+//            setState(() {
+//              _success = value;
+//            });
+//          }
+//        });
+//      },
+//      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+//      highlightElevation: 0,
+//      borderSide: BorderSide(color: Colors.grey),
+//      child: Padding(
+//        padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+//        child: Row(
+//          mainAxisSize: MainAxisSize.min,
+//          mainAxisAlignment: MainAxisAlignment.center,
+//          children: <Widget>[
+//            Image(image: AssetImage("images/google-logo.jpg"), height: 35.0),
+//            Padding(
+//              padding: const EdgeInsets.only(left: 10),
+//              child: Text(
+//                'Sign in with Google',
+//                style: TextStyle(
+//                  fontSize: 20,
+//                  color: Colors.grey,
+//                ),
+//              ),
+//            )
+//          ],
+//        ),
+//      ),
+//    );
+//  }
 
   Future<bool> signInWithGoogle() async {
     //TODO: handle the exception for sign_in_failed
@@ -189,6 +208,7 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
 
       final FirebaseUser currentUser = await _auth.currentUser();
       assert(user.uid == currentUser.uid);
+      print("user full name : " + user.displayName);
 
       QuerySnapshot q = await Firestore.instance
           .collection("users")
@@ -258,6 +278,7 @@ class _AppleSignInSectionState extends State<AppleSignInSection> {
       assert(await user.getIdToken() != null);
 
       final FirebaseUser currentUser = await _auth.currentUser();
+      print("user full name : " + user.displayName);
       assert(user.uid == currentUser.uid);
 
       QuerySnapshot q = await Firestore.instance
