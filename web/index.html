@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <meta name="google-signin-client_id" content="103378287137-qvs9d2vmr8r3oian73ac7846944sleh6.apps.googleusercontent.com">
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="paperback">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+
+  <title>paperback</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <!-- This script installs service_worker.js to provide PWA functionality to
+       application. For more information, see:
+       https://developers.google.com/web/fundamentals/primers/service-workers -->
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('flutter_service_worker.js');
+      });
+    }
+  </script>
+  <!-- The core Firebase JS SDK is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/7.14.5/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.14.5/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.14.5/firebase-firestore.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/7.14.5/firebase-analytics.js"></script>
+
+  <script>
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey: "AIzaSyDWs5kalU-GIoNJLiLl0MbCSJfKrxLJ8a4",
+    authDomain: "paperback-dbeac.firebaseapp.com",
+    databaseURL: "https://paperback-dbeac.firebaseio.com",
+    projectId: "paperback-dbeac",
+    storageBucket: "paperback-dbeac.appspot.com",
+    messagingSenderId: "103378287137",
+    appId: "1:103378287137:web:c8d950c8c33aacaff8c160",
+    measurementId: "G-V92VQ9Q742"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  firebase.analytics();
+</script>
+
+
+  <script src="main.dart.js" type="application/javascript"></script>
+</body>
+</html>
