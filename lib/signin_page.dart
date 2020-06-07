@@ -1,3 +1,4 @@
+import 'package:apple_sign_in/apple_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:paperback/home_page.dart';
 import 'package:paperback/password_field.dart';
 import 'package:paperback/register_page.dart';
+import 'dart:io' show Platform;
 
 import 'google_register_page.dart';
 
@@ -53,6 +55,7 @@ class SignInPageState extends State<SignInPage> {
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
                     )),
                     _EmailPasswordForm(),
+                    Platform.isIOS ? AppleSignInSection() : Container(),
                     _GoogleSignInSection(),
                     Container(
                       width: double.infinity,
@@ -214,6 +217,129 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
       _success = false;
       return false;
     }
+  }
+}
+
+class AppleSignInSection extends StatefulWidget {
+  @override
+  _AppleSignInSectionState createState() => _AppleSignInSectionState();
+}
+
+class _AppleSignInSectionState extends State<AppleSignInSection> {
+  // Determine if Apple SignIn is available
+  Future<bool> get appleSignInAvailable => AppleSignIn.isAvailable();
+  bool _success;
+  bool isNewUser;
+  String errorMessage;
+
+  /// Sign in with Apple
+  Future<bool> appleSignIn() async {
+    try {
+      final AuthorizationResult appleResult =
+          await AppleSignIn.performRequests([
+        AppleIdRequest(requestedScopes: [Scope.email, Scope.fullName])
+      ]);
+
+      if (appleResult.error != null) {
+        print(appleResult.error);
+      }
+
+      final AuthCredential credential =
+          OAuthProvider(providerId: 'apple.com').getCredential(
+        accessToken:
+            String.fromCharCodes(appleResult.credential.authorizationCode),
+        idToken: String.fromCharCodes(appleResult.credential.identityToken),
+      );
+
+      AuthResult firebaseResult = await _auth.signInWithCredential(credential);
+      FirebaseUser user = firebaseResult.user;
+
+      assert(!user.isAnonymous);
+      assert(await user.getIdToken() != null);
+
+      final FirebaseUser currentUser = await _auth.currentUser();
+      assert(user.uid == currentUser.uid);
+
+      QuerySnapshot q = await Firestore.instance
+          .collection("users")
+          .where("email", isEqualTo: currentUser.email)
+          .getDocuments();
+
+      if (firebaseResult.additionalUserInfo.isNewUser || q.documents.isEmpty) {
+        isNewUser = true;
+      } else {
+        isNewUser = false;
+      }
+
+      print('appleSignIn succeeded: $user');
+      _success = true;
+
+      return true;
+    } catch (error) {
+      print(error);
+
+      switch (error.code) {
+        case "SIGN_IN_FAILED":
+          errorMessage = "An unexpected error occurred while signing.";
+          break;
+        default:
+          errorMessage = "An unexpected error occurred while signing.";
+          break;
+      }
+      print("Sign in failed: error");
+      _success = false;
+      return _success;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          alignment: Alignment.center,
+          child: FutureBuilder(
+            future: appleSignInAvailable,
+            builder: (context, snapshot) {
+              if (snapshot.data == true) {
+                return AppleSignInButton(
+                  onPressed: () {
+                    appleSignIn().then((value) {
+                      if (value) {
+                        if (isNewUser != null && isNewUser) {
+                          _pushReplacementPage(context, GoogleRegisterPage());
+                        } else {
+                          _pushReplacementPage(context, HomePage(0));
+                        }
+                      } else {
+                        setState(() {
+                          _success = value;
+                        });
+                      }
+                    });
+                  },
+                );
+              } else {
+                return Container();
+              }
+            },
+          ),
+        ),
+        Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            _success == null
+                ? ''
+                : (_success
+                    ? 'Successfully signed in.'
+                    : 'Sign in failed: $errorMessage'),
+            style: TextStyle(color: Colors.red),
+          ),
+        )
+      ],
+    );
   }
 }
 

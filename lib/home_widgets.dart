@@ -26,7 +26,7 @@ class GroupsState extends State<Groups> {
   List<String> members;
   String userEmail;
   List<String> userGroups;
-  List<String> userGroupNames;
+//  List<String> userGroupNames;
   String userFullName;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _groupCodeController = TextEditingController();
@@ -37,7 +37,6 @@ class GroupsState extends State<Groups> {
 
   @override
   void initState() {
-    loadGroupList();
     super.initState();
     _selectedGroup = userGroups[0].toString();
     Firestore.instance
@@ -106,27 +105,46 @@ class GroupsState extends State<Groups> {
           "My Groups",
           style: optionStyle,
         ),
-        groupDropDown != null
-            ? DropdownButton<String>(
-                hint: new Text('Select A Group'),
-                items: groupDropDown,
-                value: _selectedGroup,
-                onChanged: (value) {
-                  Firestore.instance
-                      .collection("groups")
-                      .where("group_code", isEqualTo: value)
-                      .getDocuments()
-                      .then((res) => {
-                            setState(() {
-                              _selectedGroup = value;
-                              members =
-                                  List.from(res.documents[0].data["members"]);
-                            })
-                          });
-                },
-                isExpanded: false,
-              )
-            : Text("Loading ..."),
+        StreamBuilder(
+            stream: Firestore.instance
+                .collection('groups')
+                .where("group_code", whereIn: userGroups)
+                .snapshots(),
+            builder:
+                (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.hasError)
+                return new Text('Error: ${snapshot.error}');
+              switch (snapshot.connectionState) {
+                case ConnectionState.waiting:
+                  return new Text('Loading...');
+                default:
+                  return new DropdownButton<String>(
+                    hint: new Text('Select A Group'),
+                    value: _selectedGroup,
+                    items: snapshot.data.documents
+                        .map((DocumentSnapshot document) {
+                      return new DropdownMenuItem<String>(
+                        value: document.data['group_code'],
+                        child: new Text(document.data['group_name']),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      Firestore.instance
+                          .collection("groups")
+                          .where("group_code", isEqualTo: value)
+                          .getDocuments()
+                          .then((res) => {
+                                setState(() {
+                                  _selectedGroup = value;
+                                  members = List.from(
+                                      res.documents[0].data["members"]);
+                                })
+                              });
+                    },
+                    isExpanded: false,
+                  );
+              }
+            }),
         SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -323,36 +341,6 @@ class GroupsState extends State<Groups> {
         );
       },
     );
-  }
-
-  void loadGroupList() {
-    List<DropdownMenuItem<String>> gDropDown = [];
-    loadGroupNames().then((value) {
-      for (var i = 0; i < userGroups.length; i++) {
-        gDropDown.add(new DropdownMenuItem(
-          child: new Text(userGroupNames[i]),
-          value: userGroups[i].toString(),
-        ));
-      }
-      setState(() {
-        groupDropDown = List.from(gDropDown);
-      });
-    });
-
-    return;
-  }
-
-  Future<void> loadGroupNames() async {
-    userGroupNames = new List(userGroups.length);
-    for (var i = 0; i < userGroups.length; i++) {
-      var doc = await Firestore.instance
-          .collection("groups")
-          .where("group_code", isEqualTo: userGroups[i].toString())
-          .getDocuments();
-
-      userGroupNames[i] = doc.documents[0].data["group_name"].toString();
-    }
-    return;
   }
 
   static Widget _buildGroupListItem(
