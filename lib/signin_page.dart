@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:apple_sign_in/apple_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,7 +10,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:paperback/home_page.dart';
 import 'package:paperback/password_field.dart';
 import 'package:paperback/register_page.dart';
-import 'dart:io' show Platform;
 
 import 'google_register_page.dart';
 
@@ -142,50 +143,6 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
     );
   }
 
-//  Widget _signInButton(BuildContext context) {
-//    return OutlineButton(
-//      splashColor: Colors.grey,
-//      onPressed: () {
-//        signInWithGoogle().then((value) {
-//          if (value) {
-//            if (isGoogleNewUser != null && isGoogleNewUser) {
-//              _pushReplacementPage(context, GoogleRegisterPage());
-//            } else {
-//              _pushReplacementPage(context, HomePage(0));
-//            }
-//          } else {
-//            setState(() {
-//              _success = value;
-//            });
-//          }
-//        });
-//      },
-//      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
-//      highlightElevation: 0,
-//      borderSide: BorderSide(color: Colors.grey),
-//      child: Padding(
-//        padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-//        child: Row(
-//          mainAxisSize: MainAxisSize.min,
-//          mainAxisAlignment: MainAxisAlignment.center,
-//          children: <Widget>[
-//            Image(image: AssetImage("images/google-logo.jpg"), height: 35.0),
-//            Padding(
-//              padding: const EdgeInsets.only(left: 10),
-//              child: Text(
-//                'Sign in with Google',
-//                style: TextStyle(
-//                  fontSize: 20,
-//                  color: Colors.grey,
-//                ),
-//              ),
-//            )
-//          ],
-//        ),
-//      ),
-//    );
-//  }
-
   Future<bool> signInWithGoogle() async {
     //TODO: handle the exception for sign_in_failed
 
@@ -254,63 +211,65 @@ class _AppleSignInSectionState extends State<AppleSignInSection> {
 
   /// Sign in with Apple
   Future<bool> appleSignIn() async {
-    try {
-      final AuthorizationResult appleResult =
-          await AppleSignIn.performRequests([
-        AppleIdRequest(requestedScopes: [Scope.email, Scope.fullName])
-      ]);
+    final AuthorizationResult appleResult = await AppleSignIn.performRequests([
+      AppleIdRequest(requestedScopes: [Scope.email, Scope.fullName])
+    ]);
 
-      if (appleResult.error != null) {
-        print(appleResult.error);
-      }
-
-      final AuthCredential credential =
-          OAuthProvider(providerId: 'apple.com').getCredential(
-        accessToken:
-            String.fromCharCodes(appleResult.credential.authorizationCode),
-        idToken: String.fromCharCodes(appleResult.credential.identityToken),
-      );
-
-      AuthResult firebaseResult = await _auth.signInWithCredential(credential);
-      FirebaseUser user = firebaseResult.user;
-
-      assert(!user.isAnonymous);
-      assert(await user.getIdToken() != null);
-
-      final FirebaseUser currentUser = await _auth.currentUser();
-      print("user full name : " + user.displayName);
-      assert(user.uid == currentUser.uid);
-
-      QuerySnapshot q = await Firestore.instance
-          .collection("users")
-          .where("email", isEqualTo: currentUser.email)
-          .getDocuments();
-
-      if (firebaseResult.additionalUserInfo.isNewUser || q.documents.isEmpty) {
-        isNewUser = true;
-      } else {
-        isNewUser = false;
-      }
-
-      print('appleSignIn succeeded: $user');
-      _success = true;
-
-      return true;
-    } catch (error) {
-      print(error);
-
-      switch (error.code) {
-        case "SIGN_IN_FAILED":
-          errorMessage = "An unexpected error occurred while signing.";
-          break;
-        default:
-          errorMessage = "An unexpected error occurred while signing.";
-          break;
-      }
-      print("Sign in failed: error");
+    if (appleResult.error != null) {
+      print(appleResult.error);
       _success = false;
-      return _success;
+      switch (appleResult.status) {
+        case AuthorizationStatus.authorized:
+          print("Login success");
+          break;
+        case AuthorizationStatus.error:
+          errorMessage = appleResult.error.localizedDescription;
+          print("Sign in failed: ${appleResult.error.localizedDescription}");
+          _success = false;
+          return false;
+          break;
+        case AuthorizationStatus.cancelled:
+          errorMessage = "Sign in failed: User Cancelled";
+          print("Sign in failed: User Cancelled");
+          _success = false;
+          return false;
+          break;
+      }
+      return false;
     }
+
+    final AuthCredential credential =
+        OAuthProvider(providerId: 'apple.com').getCredential(
+      accessToken:
+          String.fromCharCodes(appleResult.credential.authorizationCode),
+      idToken: String.fromCharCodes(appleResult.credential.identityToken),
+    );
+
+    AuthResult firebaseResult = await _auth.signInWithCredential(credential);
+    FirebaseUser user = firebaseResult.user;
+
+    assert(!user.isAnonymous);
+    assert(await user.getIdToken() != null);
+
+    final FirebaseUser currentUser = await _auth.currentUser();
+    print("user full name : " + user.displayName);
+    assert(user.uid == currentUser.uid);
+
+    QuerySnapshot q = await Firestore.instance
+        .collection("users")
+        .where("email", isEqualTo: currentUser.email)
+        .getDocuments();
+
+    if (firebaseResult.additionalUserInfo.isNewUser || q.documents.isEmpty) {
+      isNewUser = true;
+    } else {
+      isNewUser = false;
+    }
+
+    print('appleSignIn succeeded: $user');
+    _success = true;
+
+    return true;
   }
 
   @override
@@ -320,7 +279,7 @@ class _AppleSignInSectionState extends State<AppleSignInSection> {
         Container(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           alignment: Alignment.center,
-          child: FutureBuilder(
+          child: FutureBuilder<bool>(
             future: appleSignInAvailable,
             builder: (context, snapshot) {
               if (snapshot.data == true) {

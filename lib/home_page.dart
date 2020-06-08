@@ -2,6 +2,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:paperback/edit_profile.dart';
+import 'package:paperback/manage_groups.dart';
 import 'package:paperback/signin_page.dart';
 
 import 'add_book.dart';
@@ -157,6 +159,30 @@ class HomePageState extends State<HomePage> {
 //                        },
 //                      ),
 //                    ),
+                    ListTile(
+                      leading: Icon(Icons.person_pin),
+                      title: Text(
+                        "Edit Profile",
+                      ),
+                      trailing: Icon(Icons.arrow_forward_ios),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pushPage(context, ProfilePage());
+                      },
+                    ),
+
+                    ListTile(
+                      leading: Icon(Icons.people),
+                      title: Text(
+                        "Manage groups",
+                      ),
+                      trailing: Icon(Icons.arrow_forward_ios),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pushPage(context, ManageGroups());
+                      },
+                    ),
+
                     Divider(),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 70),

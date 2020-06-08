@@ -11,7 +11,7 @@ description: An application for creating private book exchange communities.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.2.2+5
+version: 1.2.3+6
 
 environment:
   sdk: ">=2.2.0 <3.0.0"
@@ -27,10 +27,8 @@ dependencies:
   google_sign_in_web: ^0.9.1
   firebase_auth: ^0.16.0
   firebase_core: ^0.4.4
-  firebase_analytics:
   cloud_firestore:
   random_string: ^2.0.1
-  firebase_dynamic_links: ^0.3.0
   share:
   barcode_scan:
   http:

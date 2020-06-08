@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
 import 'package:paperback/borrowed_books_tile.dart';
 import 'package:paperback/browse_books_tile.dart';
 import 'package:paperback/global_app_data.dart';
@@ -326,9 +325,9 @@ class GroupsState extends State<Groups> {
 
                   setState(() {
                     HomePageState.resetInit();
+                    Navigator.of(context).pop();
                   });
                 });
-                Navigator.of(context).pop();
               },
             ),
             new FlatButton(
