@@ -68,16 +68,19 @@ class GlobalAppData {
         .getDocuments();
 
     if (q.documents.isEmpty) {
+      String newGroupName = "Default Group";
       String newGroupId = "g_" + randomAlphaNumeric(6);
+
       await Firestore.instance.collection('users').add({
         "full_name": user.displayName,
         "email": user.email,
         "group_code": [newGroupId],
       });
+
       await Firestore.instance.collection("groups").add({
         "group_code": newGroupId,
         "members": [user.email],
-        "group_name": "Default Group",
+        "group_name": newGroupName,
       });
     }
 

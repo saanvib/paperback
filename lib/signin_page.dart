@@ -1,7 +1,6 @@
 import 'dart:io' show Platform;
 
 import 'package:apple_sign_in/apple_sign_in.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_signin_button/button_list.dart';
@@ -10,8 +9,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:paperback/home_page.dart';
 import 'package:paperback/password_field.dart';
 import 'package:paperback/register_page.dart';
-
-import 'google_register_page.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final GoogleSignIn googleSignIn = GoogleSignIn(
@@ -113,11 +110,7 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
             onPressed: () {
               signInWithGoogle().then((value) {
                 if (value) {
-                  if (isGoogleNewUser != null && isGoogleNewUser) {
-                    _pushReplacementPage(context, GoogleRegisterPage());
-                  } else {
-                    _pushReplacementPage(context, HomePage(0));
-                  }
+                  _pushReplacementPage(context, HomePage(0));
                 } else {
                   setState(() {
                     _success = value;
@@ -144,8 +137,6 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
   }
 
   Future<bool> signInWithGoogle() async {
-    //TODO: handle the exception for sign_in_failed
-
     try {
       final GoogleSignInAccount googleSignInAccount =
           await googleSignIn.signIn();
@@ -165,18 +156,6 @@ class _GoogleSignInSectionState extends State<_GoogleSignInSection> {
 
       final FirebaseUser currentUser = await _auth.currentUser();
       assert(user.uid == currentUser.uid);
-      print("user full name : " + user.displayName);
-
-      QuerySnapshot q = await Firestore.instance
-          .collection("users")
-          .where("email", isEqualTo: currentUser.email)
-          .getDocuments();
-
-      if (authResult.additionalUserInfo.isNewUser || q.documents.isEmpty) {
-        isGoogleNewUser = true;
-      } else {
-        isGoogleNewUser = false;
-      }
 
       print('signInWithGoogle succeeded: $user');
       _success = true;
@@ -215,61 +194,46 @@ class _AppleSignInSectionState extends State<AppleSignInSection> {
       AppleIdRequest(requestedScopes: [Scope.email, Scope.fullName])
     ]);
 
-    if (appleResult.error != null) {
-      print(appleResult.error);
-      _success = false;
-      switch (appleResult.status) {
-        case AuthorizationStatus.authorized:
-          print("Login success");
-          break;
-        case AuthorizationStatus.error:
-          errorMessage = appleResult.error.localizedDescription;
-          print("Sign in failed: ${appleResult.error.localizedDescription}");
-          _success = false;
-          return false;
-          break;
-        case AuthorizationStatus.cancelled:
-          errorMessage = "Sign in failed: User Cancelled";
-          print("Sign in failed: User Cancelled");
-          _success = false;
-          return false;
-          break;
-      }
-      return false;
+    switch (appleResult.status) {
+      case AuthorizationStatus.authorized:
+        final AuthCredential credential =
+            OAuthProvider(providerId: 'apple.com').getCredential(
+          accessToken:
+              String.fromCharCodes(appleResult.credential.authorizationCode),
+          idToken: String.fromCharCodes(appleResult.credential.identityToken),
+        );
+        AuthResult firebaseResult =
+            await _auth.signInWithCredential(credential);
+        FirebaseUser user = firebaseResult.user;
+
+        final updateUser = UserUpdateInfo();
+        updateUser.displayName =
+            '${appleResult.credential.fullName.givenName} ${appleResult.credential.fullName.familyName}';
+        await user.updateProfile(updateUser);
+        String fullName = updateUser.displayName;
+        print(fullName);
+        assert(!user.isAnonymous);
+        assert(await user.getIdToken() != null);
+
+        print('appleSignIn succeeded: $user');
+
+        _success = true;
+        break;
+      case AuthorizationStatus.error:
+        errorMessage = appleResult.error.localizedDescription;
+        print("Sign in failed: ${appleResult.error.localizedDescription}");
+        _success = false;
+        return false;
+        break;
+      case AuthorizationStatus.cancelled:
+        errorMessage = "Sign in failed: User Cancelled";
+        print("Sign in failed: User Cancelled");
+        _success = false;
+        return false;
+        break;
     }
 
-    final AuthCredential credential =
-        OAuthProvider(providerId: 'apple.com').getCredential(
-      accessToken:
-          String.fromCharCodes(appleResult.credential.authorizationCode),
-      idToken: String.fromCharCodes(appleResult.credential.identityToken),
-    );
-
-    AuthResult firebaseResult = await _auth.signInWithCredential(credential);
-    FirebaseUser user = firebaseResult.user;
-
-    assert(!user.isAnonymous);
-    assert(await user.getIdToken() != null);
-
-    final FirebaseUser currentUser = await _auth.currentUser();
-    print("user full name : " + user.displayName);
-    assert(user.uid == currentUser.uid);
-
-    QuerySnapshot q = await Firestore.instance
-        .collection("users")
-        .where("email", isEqualTo: currentUser.email)
-        .getDocuments();
-
-    if (firebaseResult.additionalUserInfo.isNewUser || q.documents.isEmpty) {
-      isNewUser = true;
-    } else {
-      isNewUser = false;
-    }
-
-    print('appleSignIn succeeded: $user');
-    _success = true;
-
-    return true;
+    return _success;
   }
 
   @override
@@ -284,14 +248,12 @@ class _AppleSignInSectionState extends State<AppleSignInSection> {
             builder: (context, snapshot) {
               if (snapshot.data == true) {
                 return AppleSignInButton(
+                  style: ButtonStyle.black,
+                  type: ButtonType.signIn,
                   onPressed: () {
                     appleSignIn().then((value) {
                       if (value) {
-                        if (isNewUser != null && isNewUser) {
-                          _pushReplacementPage(context, GoogleRegisterPage());
-                        } else {
-                          _pushReplacementPage(context, HomePage(0));
-                        }
+                        _pushReplacementPage(context, HomePage(0));
                       } else {
                         setState(() {
                           _success = value;
